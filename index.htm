@@ -50,10 +50,17 @@
         .chart-container {
             position: relative;
             width: 100%;
-            max-width: 400px; /* Tamanho ajustado para gráficos */
+            /* Removido max-width e height fixos para maior adaptabilidade */
             margin-left: auto;
             margin-right: auto;
-            height: 300px; /* Altura ajustada para gráficos */
+            min-height: 250px; /* Garante uma altura mínima para o gráfico */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chart-container canvas {
+            width: 100% !important;
+            height: 100% !important;
         }
         /* Estilo para barra de progresso */
         .progress-bar-container {
@@ -70,6 +77,24 @@
             color: white;
             font-size: 0.75rem; /* 12px */
             transition: width 0.5s ease-in-out;
+        }
+        /* Estilos para linhas de fase em tabelas */
+        .phase-row {
+            background-color: #f8fafc; /* slate-50 */
+            font-size: 0.8rem;
+            color: #475569; /* slate-600 */
+        }
+        .phase-row td {
+            padding-left: 3rem; /* Indentação para fases */
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+        .toggle-icon {
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out;
+        }
+        .toggle-icon.rotated {
+            transform: rotate(90deg);
         }
     </style>
 </head>
@@ -109,13 +134,16 @@
                         <h3 class="text-xl font-bold text-slate-700 mb-4">Status de Todos os Projetos/Serviços</h3>
                         <div class="chart-container">
                             <canvas id="overallStatusChart"></canvas>
+                            <p id="overallStatusChartNoData" class="hidden text-center text-slate-500 py-4">Sem dados para o gráfico.</p>
                         </div>
                     </div>
                     <div class="card p-4">
                         <h3 class="text-xl font-bold text-slate-700 mb-4">Materiais Críticos no Estoque</h3>
                         <div class="chart-container">
                             <canvas id="criticalStockChart"></canvas>
+                            <p id="criticalStockChartNoData" class="hidden text-center text-slate-500 py-4">Sem dados para o gráfico.</p>
                         </div>
+                        <p id="criticalStockChartNote" class="text-sm text-slate-500 mt-2 hidden text-center">Exibindo os 10 itens mais críticos. Veja a aba "Estoque de Materiais" para a lista completa.</p>
                     </div>
                 </div>
             </div>
@@ -135,9 +163,10 @@
                         <h3 class="text-xl font-bold text-slate-700 mb-4">Status dos Projetos</h3>
                         <div class="chart-container">
                             <canvas id="reformasStatusChart"></canvas>
+                            <p id="reformasStatusChartNoData" class="hidden text-center text-slate-500 py-4">Sem dados para o gráfico.</p>
                         </div>
                     </div>
-                    <div class="lg:col-span-2 card p-6">
+                    <div class:col-span-2 card p-6">
                         <h3 class="text-xl font-bold text-slate-700 mb-4">Projetos de Reformas Detalhados</h3>
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left text-slate-500">
@@ -257,6 +286,7 @@
                     <div class="chart-container mb-4">
                         <h3 class="text-xl font-bold text-slate-700 mb-2">Itens de Estoque para Reposição</h3>
                         <canvas id="estoqueStatusChart"></canvas>
+                        <p id="estoqueStatusChartNoData" class="hidden text-center text-slate-500 py-4">Nenhum item abaixo do nível mínimo.</p>
                     </div>
                     <table class="w-full text-sm text-left text-slate-500 mt-4">
                         <thead class="text-xs text-slate-700 uppercase bg-slate-100">
@@ -344,7 +374,17 @@
     </div>
 
     <script type="text/javascript">
-        // --- Variáveis e Dados de Exemplo ---
+        // --- URLs de Conexão com Google Apps Script (APIs) ---
+        // ATENÇÃO: Substitua estas URLs pelas URLs de implantação dos seus próprios scripts Apps Script.
+        // Cada URL abaixo representaria um Apps Script que lê uma planilha específica e retorna JSON.
+        // Para o registro de OS, a URL abaixo é a que você implantará com o script doPost.
+        const googleSheetReformasApiUrl = 'https://script.google.com/macros/s/SUA_URL_APPS_SCRIPT_REFORMAS/exec'; // Exemplo
+        const googleSheetManutencaoGeralApiUrl = 'https://script.google.com/macros/s/SUA_URL_APPS_SCRIPT_MANUTENCAO_GERAL/exec'; // Exemplo
+        const googleSheetEstoqueMateriaisApiUrl = 'https://script.google.com/macros/s/SUA_URL_APPS_SCRIPT_ESTOQUE_MATERIAIS/exec'; // Exemplo
+        const googleSheetFerramentasApiUrl = 'https://script.google.com/macros/s/SUA_URL_APPS_SCRIPT_FERRAMENTAS/exec'; // Exemplo
+        const googleSheetOrdemServicoPostUrl = 'https://script.google.com/macros/s/AKfycbypxSVE9syiII4H4DumAfxWEgFm1AE7qLpuQgqHTNLMi4B7I8dWF0Het7V2Cd4_aL58Mg/exec'; // ESTA É A URL REAL DO SEU SCRIPT DE POST DE OS
+
+        // --- Variáveis e Dados de Exemplo (Serão substituídos por dados reais das APIs) ---
         let currentActiveTab = 'visao-geral'; // Aba ativa inicialmente
         let reformasStatusChartInstance; // Instância do Chart.js para reformas
         let reformasTypeChartInstance; // Instância do Chart.js para tipos de reforma
@@ -352,7 +392,8 @@
         let overallStatusChartInstance; // Instância do Chart.js para status geral
         let criticalStockChartInstance; // Instância do Chart.js para estoque crítico
 
-        // Dados de exemplo para a aba de Estoque de Materiais
+        // Dados de exemplo (MOCK DATA) - Em um cenário real, seriam carregados das planilhas via Apps Script.
+        // Manterei o mock data para que o painel funcione imediatamente sem as APIs configuradas.
         const mockEstoqueMateriais = [
             { material: 'Lâmpada LED (9W)', unidade: 'unidade', quantidade: 50, minimo: 10, status: 'OK' },
             { material: 'Filtro Bebedouro (modelo X)', unidade: 'unidade', quantidade: 5, minimo: 3, status: 'OK' },
@@ -364,7 +405,6 @@
             { material: 'Fita Isolante', unidade: 'rolo', quantidade: 7, minimo: 10, status: 'Abaixo do Mínimo' }
         ];
 
-        // Dados de exemplo para a aba de Reformas
         const mockReformasData = [
             { id: 1, projeto: 'Reforma Sala de Reuniões', unidade: 'Secretaria Central', tipo: 'Pintura/Elétrica', dataInicio: '01/07/2025', dataFimPrevista: '30/07/2025', status: 'Em Andamento', progresso: 80, responsavel: 'Equipe A', typeReforma: 'Pequena' },
             { id: 2, projeto: 'Pintura Hall de Entrada', unidade: 'Secretaria Central', tipo: 'Pintura', dataInicio: '15/07/2025', dataFimPrevista: '20/07/2025', status: 'Pendente', progresso: 0, responsavel: 'Equipe B', typeReforma: 'Pequena' },
@@ -390,16 +430,14 @@
             }
         ];
 
-        // Dados de exemplo para a aba de Manutenção Geral
         const mockManutencaoGeralData = [
-            { id: 101, local: 'Sala 101', tipoServico: 'Troca de Lâmpada', descricao: 'Lâmpada queimada no teto', dataSolicitacao: '01/07/2025', status: 'Pendente', responsavel: 'Equipe A' },
-            { id: 102, local: 'Recepção', tipoServico: 'Fiação Elétrica', descricao: 'Tomada com mau contato', dataSolicitacao: '02/07/2025', status: 'Em Andamento', responsavel: 'Equipe B' },
-            { id: 103, local: 'Jardim', tipoServico: 'Bomba D\'água', descricao: 'Bomba não liga', dataSolicitacao: '28/06/2025', status: 'Concluído', responsavel: 'Equipe C' },
-            { id: 104, local: 'Sala de Espera', tipoServico: 'Reforma de Móveis', descricao: 'Cadeira com encosto quebrado', dataSolicitacao: '03/07/2025', status: 'Pendente', responsavel: 'Equipe A' },
-            { id: 105, local: 'Corredor 3º Andar', tipoServico: 'Troca de Lâmpada', descricao: 'Lâmpada piscando', dataSolicitacao: '04/07/2025', status: 'Pendente', responsavel: 'Equipe A' }
+            { id: 101, local: 'Sala 101', tipoServico: 'Troca de Lâmpada', descricaoBreve: 'Lâmpada queimada no teto', dataSolicitacao: '01/07/2025', status: 'Pendente', responsavel: 'Equipe A' },
+            { id: 102, local: 'Recepção', tipoServico: 'Fiação Elétrica', descricaoBreve: 'Tomada com mau contato', dataSolicitacao: '02/07/2025', status: 'Em Andamento', responsavel: 'Equipe B' },
+            { id: 103, local: 'Jardim', tipoServico: 'Bomba D\'água', descricaoBreve: 'Bomba não liga', dataSolicitacao: '28/06/2025', status: 'Concluído', responsavel: 'Equipe C' },
+            { id: 104, local: 'Sala de Espera', tipoServico: 'Reforma de Móveis', descricaoBreve: 'Cadeira com encosto quebrado', dataSolicitacao: '03/07/2025', status: 'Pendente', responsavel: 'Equipe A' },
+            { id: 105, local: 'Corredor 3º Andar', tipoServico: 'Troca de Lâmpada', descricaoBreve: 'Lâmpada piscando', dataSolicitacao: '04/07/2025', status: 'Pendente', responsavel: 'Equipe A' }
         ];
 
-        // Dados de exemplo para a aba de Ferramentas de Trabalho
         const mockFerramentasData = [
             { nome: 'Furadeira de Impacto', quantidade: 2, localizacao: 'Almoxarifado', status: 'Disponível', responsavel: 'N/A' },
             { nome: 'Caixa de Ferramentas (Básica)', quantidade: 5, localizacao: 'Almoxarifado', status: 'Disponível', responsavel: 'N/A' },
@@ -435,15 +473,94 @@
         }
 
         /**
+         * Função genérica para buscar dados de uma API (Google Apps Script) ou CSV.
+         * Adapta-se ao tipo de URL para parsear JSON ou CSV.
+         * @param {string} apiUrl - A URL da API (Apps Script) ou CSV.
+         * @returns {Promise<Array<Object>>} Uma promessa que resolve para um array de objetos.
+         */
+        async function fetchDataFromApi(apiUrl) {
+            if (!apiUrl || apiUrl.includes('SUA_URL_APPS_SCRIPT_')) { // Verifica se é uma URL de exemplo não configurada
+                console.warn(`URL da API não configurada ou é um placeholder: ${apiUrl}. Retornando mock data.`);
+                // Retorna mock data baseado na URL simulada para que o painel funcione
+                if (apiUrl.includes('REFORMAS')) return mockReformasData;
+                if (apiUrl.includes('MANUTENCAO_GERAL')) return mockManutencaoGeralData;
+                if (apiUrl.includes('ESTOQUE_MATERIAIS')) return mockEstoqueMateriais;
+                if (apiUrl.includes('FERRAMENTAS')) return mockFerramentasData;
+                return [];
+            }
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Falha ao carregar dados da URL: ${apiUrl}. Resposta: ${errorText}`);
+                }
+
+                // Se a URL for do Apps Script (termina com /exec), espera JSON
+                if (apiUrl.includes('script.google.com/macros/s/') && apiUrl.endsWith('/exec')) {
+                    const data = await response.json();
+                    if (data && data.error) {
+                        throw new Error(`Erro do Apps Script: ${data.error}`);
+                    }
+                    return data; // Já é um array de objetos JSON
+                } else {
+                    // Caso contrário (ex: ?output=csv), assume que é CSV
+                    const csvText = await response.text(); // Lê como texto diretamente
+                    return parseCsvData(csvText); // Reutiliza a função de parsing CSV
+                }
+            } catch (error) {
+                console.error("Erro ao buscar dados da API:", error);
+                return []; // Retorna array vazio em caso de erro
+            }
+        }
+
+        /**
+         * Parseia uma string CSV em um array de objetos.
+         * Detecta automaticamente o delimitador (vírgula ou ponto e vírgula).
+         * Lida com valores entre aspas.
+         * @param {string} csvText - A string contendo os dados CSV.
+         * @returns {Array<Object>} Um array de objetos onde cada objeto representa uma linha do CSV.
+         */
+        function parseCsvData(csvText) {
+            const lines = csvText.trim().split(/\r\n|\n/);
+            if (lines.length < 2) return [];
+            const headerLine = lines[0];
+            const delimiter = headerLine.includes(';') ? ';' : ','; // Detecta delimitador
+            // Regex para dividir a linha, ignorando delimitadores dentro de aspas
+            const splitRegex = new RegExp(`${delimiter}(?=(?:(?:[^"]*"){2})*[^"]*$)`);
+            const headers = headerLine.split(delimiter).map(h => h.trim().replace(/^"|"$/g, ''));
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                if (lines[i].trim() === '') continue; // Ignora linhas vazias
+                const values = lines[i].split(splitRegex);
+                const item = {};
+                for (let j = 0; j < headers.length; j++) {
+                    let value = values[j] ? values[j].trim() : '';
+                    // Remove aspas extras se o valor estiver entre aspas
+                    if (value.startsWith('"') && value.endsWith('"')) {
+                        value = value.slice(1, -1);
+                    }
+                    item[headers[j]] = value;
+                }
+                data.push(item);
+            }
+            return data;
+        }
+
+        /**
          * Renderiza a tabela de estoque de materiais e o gráfico de status de estoque.
          */
-        function renderEstoqueMateriais() {
+        async function renderEstoqueMateriais() {
             const tbody = document.getElementById('estoque-materiais-body');
             const estoqueStatusChartCanvas = document.getElementById('estoqueStatusChart');
-            if (!tbody || !estoqueStatusChartCanvas) return;
+            const estoqueStatusChartNoData = document.getElementById('estoqueStatusChartNoData');
+            
+            if (!tbody || !estoqueStatusChartCanvas || !estoqueStatusChartNoData) return;
+
+            const estoqueData = await fetchDataFromApi(googleSheetEstoqueMateriaisApiUrl);
 
             let tableHTML = '';
-            mockEstoqueMateriais.forEach(item => {
+            estoqueData.forEach(item => {
                 let statusClass = '';
                 if (item.status === 'OK') {
                     statusClass = 'bg-green-100 text-green-800';
@@ -470,7 +587,7 @@
             tbody.innerHTML = tableHTML;
 
             // --- Renderizar Gráfico de Barras de Estoque Crítico/Abaixo do Mínimo ---
-            const lowStockItems = mockEstoqueMateriais.filter(item => item.status === 'Abaixo do Mínimo' || item.status === 'Crítico');
+            const lowStockItems = estoqueData.filter(item => item.status === 'Abaixo do Mínimo' || item.status === 'Crítico');
             const labels = lowStockItems.map(item => item.material);
             const data = lowStockItems.map(item => item.quantidade);
             const backgroundColors = lowStockItems.map(item => item.status === 'Crítico' ? '#EF4444' : '#F59E0B'); // Red for critical, Amber for low
@@ -480,6 +597,8 @@
             }
 
             if (labels.length > 0) {
+                estoqueStatusChartNoData.classList.add('hidden');
+                estoqueStatusChartCanvas.classList.remove('hidden');
                 estoqueStatusChartInstance = new Chart(estoqueStatusChartCanvas, {
                     type: 'bar',
                     data: {
@@ -513,24 +632,28 @@
                     }
                 });
             } else {
-                estoqueStatusChartCanvas.parentNode.innerHTML = '<p class="text-center text-slate-500 py-4">Nenhum item abaixo do nível mínimo.</p>';
+                estoqueStatusChartNoData.classList.remove('hidden');
+                estoqueStatusChartCanvas.classList.add('hidden');
             }
         }
 
         /**
          * Renderiza o conteúdo da aba de Reformas, incluindo gráficos e tabela.
          */
-        function renderReformas() {
+        async function renderReformas() {
             const reformasTableBody = document.getElementById('reformas-table-body');
             const reformasStatusChartCanvas = document.getElementById('reformasStatusChart');
+            const reformasStatusChartNoData = document.getElementById('reformasStatusChartNoData');
             const reformasSummaryCards = document.getElementById('reformas-summary-cards');
 
-            if (!reformasTableBody || !reformasStatusChartCanvas || !reformasSummaryCards) return;
+            if (!reformasTableBody || !reformasStatusChartCanvas || !reformasStatusChartNoData || !reformasSummaryCards) return;
+
+            const reformasData = await fetchDataFromApi(googleSheetReformasApiUrl);
 
             // --- Renderizar Cartões de Resumo ---
-            const totalProjetos = mockReformasData.length;
-            const projetosEmAndamento = mockReformasData.filter(p => p.status === 'Em Andamento').length;
-            const projetosConcluidos = mockReformasData.filter(p => p.status === 'Concluído').length;
+            const totalProjetos = reformasData.length;
+            const projetosEmAndamento = reformasData.filter(p => p.status === 'Em Andamento').length;
+            const projetosConcluidos = reformasData.filter(p => p.status === 'Concluído').length;
 
             reformasSummaryCards.innerHTML = `
                 <div class="card p-5 flex items-center space-x-4">
@@ -564,7 +687,7 @@
 
             // --- Renderizar Tabela de Reformas ---
             let tableHTML = '';
-            mockReformasData.forEach(projeto => {
+            reformasData.forEach(projeto => {
                 let statusClass = '';
                 let progressColor = 'bg-blue-400';
                 
@@ -585,19 +708,55 @@
 
                 // Calcula o progresso a ser exibido
                 let displayProgress = projeto.progresso;
-                let progressDetails = '';
-                if (projeto.typeReforma === 'Unidade' && projeto.phases) {
-                    displayProgress = calculateOverallProgress(projeto.phases);
-                    progressDetails = `<ul class="text-xs text-slate-500 mt-1">`;
-                    projeto.phases.forEach(phase => {
-                        progressDetails += `<li>${phase.name}: ${phase.progresso}% (${phase.status})</li>`;
-                    });
-                    progressDetails += `</ul>`;
+                let phaseRowsHTML = '';
+                let phasesArray = []; // Initialize phasesArray
+
+                const isUnitReform = projeto.typeReforma === 'Unidade' && projeto.phases;
+
+                if (isUnitReform) {
+                    try {
+                        // Attempt to parse phases if it's a string, otherwise use directly
+                        phasesArray = typeof projeto.phases === 'string' ? JSON.parse(projeto.phases) : projeto.phases;
+                        // Ensure phasesArray is actually an array after parsing
+                        if (!Array.isArray(phasesArray)) {
+                            console.warn(`Projeto ${projeto.id} - phases não é um array válido após parsing:`, projeto.phases);
+                            phasesArray = []; // Reset if not an array
+                        }
+                    } catch (e) {
+                        console.error(`Erro ao parsear fases para o projeto ${projeto.id}:`, e, projeto.phases);
+                        phasesArray = []; // Default to empty array on parse error
+                    }
+
+                    if (phasesArray.length > 0) {
+                        displayProgress = calculateOverallProgress(phasesArray);
+                        
+                        phasesArray.forEach(phase => {
+                            let phaseProgressColor = 'bg-blue-300';
+                            if (phase.status === 'Concluído') phaseProgressColor = 'bg-green-400';
+                            else if (phase.status === 'Pendente') phaseProgressColor = 'bg-gray-300';
+
+                            phaseRowsHTML += `
+                                <tr class="phase-row hidden" data-project-id="${projeto.id}">
+                                    <td colspan="2" class="px-6 py-2">Fase: ${phase.name}</td>
+                                    <td colspan="3" class="px-6 py-2">
+                                        <div class="progress-bar-container">
+                                            <div class="progress-bar ${phaseProgressColor}" style="width: ${phase.progresso}%"></div>
+                                        </div>
+                                        <span class="text-xs text-slate-500 mt-1 block">${phase.progresso}% (${phase.status})</span>
+                                    </td>
+                                    <td colspan="3"></td>
+                                </tr>
+                            `;
+                        });
+                    }
                 }
 
                 tableHTML += `
-                    <tr class="bg-white border-b hover:bg-slate-50">
-                        <td class="px-6 py-4 font-medium text-slate-900">${projeto.projeto}</td>
+                    <tr class="bg-white border-b hover:bg-slate-50" data-project-main-row="${projeto.id}">
+                        <td class="px-6 py-4 font-medium text-slate-900 flex items-center">
+                            ${isUnitReform && phasesArray.length > 0 ? `<span class="toggle-icon mr-2">&#9658;</span>` : ''} <!-- Triângulo para expandir -->
+                            ${projeto.projeto}
+                        </td>
                         <td class="px-6 py-4">${projeto.unidade}</td>
                         <td class="px-6 py-4">${projeto.typeReforma}</td>
                         <td class="px-6 py-4">${projeto.dataInicio}</td>
@@ -612,16 +771,29 @@
                                 <div class="progress-bar ${progressColor}" style="width: ${displayProgress}%"></div>
                             </div>
                             <span class="text-xs text-slate-500 mt-1 block">${displayProgress}%</span>
-                            ${progressDetails}
                         </td>
                         <td class="px-6 py-4">${projeto.responsavel}</td>
                     </tr>
+                    ${phaseRowsHTML}
                 `;
             });
             reformasTableBody.innerHTML = tableHTML;
 
+            // Adiciona listeners para expandir/contrair as fases
+            reformasTableBody.querySelectorAll('.toggle-icon').forEach(icon => {
+                icon.addEventListener('click', (event) => {
+                    const projectId = event.target.closest('tr').dataset.projectMainRow;
+                    const phaseRows = reformasTableBody.querySelectorAll(`.phase-row[data-project-id="${projectId}"]`);
+                    phaseRows.forEach(row => {
+                        row.classList.toggle('hidden');
+                    });
+                    event.target.classList.toggle('rotated'); // Gira o triângulo
+                });
+            });
+
+
             // --- Renderizar Gráfico de Pizza de Status ---
-            const statusCounts = mockReformasData.reduce((acc, projeto) => {
+            const statusCounts = reformasData.reduce((acc, projeto) => {
                 acc[projeto.status] = (acc[projeto.status] || 0) + 1;
                 return acc;
             }, {});
@@ -640,41 +812,50 @@
                 reformasStatusChartInstance.destroy();
             }
 
-            reformasStatusChartInstance = new Chart(reformasStatusChartCanvas, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: backgroundColors,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        title: {
-                            display: false,
-                            text: 'Status dos Projetos de Reformas'
+            if (labels.length > 0) {
+                reformasStatusChartNoData.classList.add('hidden');
+                reformasStatusChartCanvas.classList.remove('hidden');
+                reformasStatusChartInstance = new Chart(reformasStatusChartCanvas, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: backgroundColors,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: false,
+                                text: 'Status dos Projetos de Reformas'
+                            }
                         }
                     }
-                }
-            });
+                });
+            } else {
+                reformasStatusChartNoData.classList.remove('hidden');
+                reformasStatusChartCanvas.classList.add('hidden');
+            }
         }
 
         /**
          * Renderiza a tabela de Manutenção Geral.
          */
-        function renderManutencaoGeral() {
+        async function renderManutencaoGeral() {
             const tbody = document.getElementById('manutencao-geral-table-body');
             if (!tbody) return;
 
+            const manutencaoData = await fetchDataFromApi(googleSheetManutencaoGeralApiUrl);
+
             let tableHTML = '';
-            mockManutencaoGeralData.forEach(item => {
+            manutencaoData.forEach(item => {
                 let statusClass = '';
                 if (item.status === 'Concluído') {
                     statusClass = 'bg-green-100 text-green-800';
@@ -705,12 +886,14 @@
         /**
          * Renderiza a tabela de Ferramentas de Trabalho.
          */
-        function renderFerramentas() {
+        async function renderFerramentas() {
             const tbody = document.getElementById('ferramentas-table-body');
             if (!tbody) return;
 
+            const ferramentasData = await fetchDataFromApi(googleSheetFerramentasApiUrl);
+
             let tableHTML = '';
-            mockFerramentasData.forEach(item => {
+            ferramentasData.forEach(item => {
                 let statusClass = '';
                 if (item.status === 'Disponível') {
                     statusClass = 'bg-green-100 text-green-800';
@@ -740,17 +923,26 @@
         /**
          * Renderiza a Visão Geral do painel, incluindo cartões de resumo e gráficos gerais.
          */
-        function renderVisaoGeral() {
+        async function renderVisaoGeral() {
             const visaoGeralSummaryCards = document.getElementById('visao-geral-summary-cards');
             const overallStatusChartCanvas = document.getElementById('overallStatusChart');
+            const overallStatusChartNoData = document.getElementById('overallStatusChartNoData');
             const criticalStockChartCanvas = document.getElementById('criticalStockChart');
+            const criticalStockChartNoData = document.getElementById('criticalStockChartNoData');
+            const criticalStockChartNote = document.getElementById('criticalStockChartNote'); // Nova nota
+
+            // Buscar dados de todas as APIs para o resumo geral:
+            const reformasData = await fetchDataFromApi(googleSheetReformasApiUrl);
+            const manutencaoGeralData = await fetchDataFromApi(googleSheetManutencaoGeralApiUrl);
+            const estoqueData = await fetchDataFromApi(googleSheetEstoqueMateriaisApiUrl);
+            // const ferramentasData = await fetchDataFromApi(googleSheetFerramentasApiUrl); // Não usado diretamente nos resumos aqui, mas pode ser adicionado
 
             // --- Calcular Resumos Gerais ---
-            const totalOS = mockReformasData.length + mockManutencaoGeralData.length; // Simplificado para exemplo
-            const osConcluidas = mockReformasData.filter(p => p.status === 'Concluído').length + mockManutencaoGeralData.filter(m => m.status === 'Concluído').length;
-            const osEmAndamento = mockReformasData.filter(p => p.status === 'Em Andamento').length + mockManutencaoGeralData.filter(m => m.status === 'Em Andamento').length;
+            const totalOS = reformasData.length + manutencaoGeralData.length; // Simplificado para exemplo
+            const osConcluidas = reformasData.filter(p => p.status === 'Concluído').length + manutencaoGeralData.filter(m => m.status === 'Concluído').length;
+            const osEmAndamento = reformasData.filter(p => p.status === 'Em Andamento').length + manutencaoGeralData.filter(m => m.status === 'Em Andamento').length;
             const osPendentes = totalOS - osConcluidas - osEmAndamento;
-            const materiaisCriticos = mockEstoqueMateriais.filter(item => item.status === 'Crítico' || item.status === 'Abaixo do Mínimo').length;
+            const materiaisCriticosCount = estoqueData.filter(item => item.status === 'Crítico' || item.status === 'Abaixo do Mínimo').length;
 
             visaoGeralSummaryCards.innerHTML = `
                 <div class="card p-5 flex items-center space-x-4">
@@ -786,7 +978,7 @@
                     </div>
                     <div>
                         <p class="text-slate-500 text-sm">Materiais Críticos</p>
-                        <p class="text-2xl font-bold text-slate-800">${materiaisCriticos}</p>
+                        <p class="text-2xl font-bold text-slate-800">${materiaisCriticosCount}</p>
                     </div>
                 </div>
             `;
@@ -804,28 +996,45 @@
             if (overallStatusChartInstance) {
                 overallStatusChartInstance.destroy();
             }
-            overallStatusChartInstance = new Chart(overallStatusChartCanvas, {
-                type: 'pie',
-                data: {
-                    labels: overallLabels,
-                    datasets: [{
-                        data: overallData,
-                        backgroundColor: overallBackgroundColors,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top' },
-                        title: { display: false }
+            if (overallLabels.length > 0 && overallData.some(val => val > 0)) { // Verifica se há dados válidos
+                overallStatusChartNoData.classList.add('hidden');
+                overallStatusChartCanvas.classList.remove('hidden');
+                overallStatusChartInstance = new Chart(overallStatusChartCanvas, {
+                    type: 'pie',
+                    data: {
+                        labels: overallLabels,
+                        datasets: [{
+                            data: overallData,
+                            backgroundColor: overallBackgroundColors,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top' },
+                            title: { display: false }
+                        }
                     }
-                }
-            });
+                });
+            } else {
+                overallStatusChartNoData.classList.remove('hidden');
+                overallStatusChartCanvas.classList.add('hidden');
+            }
 
             // --- Gráfico de Estoque Crítico (Barras) ---
-            const criticalItems = mockEstoqueMateriais.filter(item => item.status === 'Crítico' || item.status === 'Abaixo do Mínimo');
+            // Ordena e limita aos 10 itens mais críticos
+            const criticalItems = estoqueData
+                .filter(item => item.status === 'Crítico' || item.status === 'Abaixo do Mínimo')
+                .sort((a, b) => {
+                    // Prioriza "Crítico" sobre "Abaixo do Mínimo", depois por quantidade
+                    if (a.status === 'Crítico' && b.status !== 'Crítico') return -1;
+                    if (b.status === 'Crítico' && a.status !== 'Crítico') return 1;
+                    return a.quantidade - b.quantidade; // Menor quantidade primeiro
+                })
+                .slice(0, 10); // Limita aos 10 primeiros
+
             const criticalLabels = criticalItems.map(item => item.material);
             const criticalData = criticalItems.map(item => item.quantidade);
             const criticalBackgroundColors = criticalItems.map(item => item.status === 'Crítico' ? '#EF4444' : '#F59E0B');
@@ -835,6 +1044,10 @@
             }
 
             if (criticalLabels.length > 0) {
+                criticalStockChartNoData.classList.add('hidden');
+                criticalStockChartCanvas.classList.remove('hidden');
+                criticalStockChartNote.classList.toggle('hidden', criticalItems.length < estoqueData.filter(item => item.status === 'Crítico' || item.status === 'Abaixo do Mínimo').length);
+
                 criticalStockChartInstance = new Chart(criticalStockChartCanvas, {
                     type: 'bar',
                     data: {
@@ -859,7 +1072,9 @@
                     }
                 });
             } else {
-                criticalStockChartCanvas.parentNode.innerHTML = '<p class="text-center text-slate-500 py-4">Nenhum material crítico no estoque.</p>';
+                criticalStockChartNoData.classList.remove('hidden');
+                criticalStockChartCanvas.classList.add('hidden');
+                criticalStockChartNote.classList.add('hidden'); // Esconde a nota se não houver dados
             }
         }
 
@@ -867,7 +1082,7 @@
          * Lida com o envio do formulário de Ordem de Serviço.
          * @param {Event} event - O evento de envio do formulário.
          */
-        function handleOsFormSubmit(event) {
+        async function handleOsFormSubmit(event) {
             event.preventDefault(); // Previne o envio padrão do formulário
             
             const solicitante = document.getElementById('os-solicitante').value;
@@ -876,27 +1091,44 @@
             const descricao = document.getElementById('os-descricao').value;
             const osMessageEl = document.getElementById('os-message');
 
-            // Simula o envio de dados (em um ambiente real, você enviaria para um Apps Script/API)
-            console.log('Nova Ordem de Serviço Registrada:', {
-                solicitante,
-                local,
-                tipoServico,
-                descricao,
-                data: new Date().toLocaleString()
-            });
+            osMessageEl.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
+            osMessageEl.classList.add('bg-gray-100', 'text-gray-800');
+            osMessageEl.innerHTML = `<div class="loader"></div><p class="mt-2">Enviando Ordem de Serviço...</p>`;
 
-            // Exibe mensagem de sucesso
-            osMessageEl.classList.remove('hidden', 'bg-red-100', 'text-red-800');
-            osMessageEl.classList.add('bg-green-100', 'text-green-800');
-            osMessageEl.innerHTML = `<strong>Sucesso!</strong> Ordem de Serviço registrada com sucesso.<br>Aguarde o contato da equipe de manutenção.`;
+            try {
+                const response = await fetch(googleSheetOrdemServicoPostUrl, {
+                    method: 'POST',
+                    mode: 'no-cors', // Necessário para Apps Script POST simples
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        solicitante: solicitante,
+                        local: local,
+                        tipoServico: tipoServico,
+                        descricao: descricao
+                    })
+                });
 
-            // Limpa o formulário após o envio
-            document.getElementById('os-form').reset();
+                // Como 'no-cors' não permite ler a resposta, assumimos sucesso se não houver erro de rede.
+                // Em um cenário real com CORS habilitado no Apps Script, você leria response.json()
+                // e verificaria data.success.
+                
+                osMessageEl.classList.remove('bg-gray-100', 'text-gray-800');
+                osMessageEl.classList.add('bg-green-100', 'text-green-800');
+                osMessageEl.innerHTML = `<strong>Sucesso!</strong> Ordem de Serviço registrada com sucesso.<br>Aguarde o contato da equipe de manutenção.`;
+                document.getElementById('os-form').reset();
 
-            // Opcional: Esconde a mensagem após alguns segundos
-            setTimeout(() => {
-                osMessageEl.classList.add('hidden');
-            }, 5000);
+            } catch (error) {
+                console.error('Erro ao registrar Ordem de Serviço:', error);
+                osMessageEl.classList.remove('bg-gray-100', 'text-gray-800', 'bg-green-100', 'text-green-800');
+                osMessageEl.classList.add('bg-red-100', 'text-red-800');
+                osMessageEl.innerHTML = `<strong>Erro!</strong> Não foi possível registrar a Ordem de Serviço. Tente novamente.`;
+            } finally {
+                setTimeout(() => {
+                    osMessageEl.classList.add('hidden');
+                }, 5000);
+            }
         }
 
         // --- Lógica de Abas ---
