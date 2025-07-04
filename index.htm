@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Manutenção da Secretaria</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+       .card {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+       .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Estilos para as Abas */
+        .tab-button {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: #475569;
+            white-space: nowrap; /* Evita quebra de linha em botões longos */
+        }
+        .tab-button.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+        /* Estilo para gráficos */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px; /* Tamanho ajustado para gráficos */
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; /* Altura ajustada para gráficos */
+        }
+        /* Estilo para barra de progresso */
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 9999px; /* full rounded */
+            height: 0.625rem; /* 10px */
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            border-radius: 9999px; /* full rounded */
+            text-align: center;
+            color: white;
+            font-size: 0.75rem; /* 12px */
+            transition: width 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="antialiased text-slate-700">
+    <div class="container mx-auto p-4 sm:p-6 md:p-8">
+        
+        <header class="mb-4">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-800">Painel de Manutenção</h1>
+            <p class="text-slate-500 mt-1">Gerenciamento de serviços e estoque da secretaria.</p>
+            <p id="last-update-time" class="text-sm text-slate-400 mt-2"></p>
+        </header>
+
+        <!-- ABAS DE NAVEGAÇÃO -->
+        <nav class="border-b border-slate-200 mb-8">
+            <div class="flex flex-wrap gap-2">
+                <button id="tab-visao-geral" class="tab-button active">Visão Geral</button>
+                <button id="tab-reformas" class="tab-button">Reformas</button>
+                <button id="tab-manutencao-geral" class="tab-button">Manutenção Geral</button>
+                <button id="tab-ar-condicionado" class="tab-button">Manutenção de Ar Condicionado</button>
+                <button id="tab-bebedouro" class="tab-button">Troca de Filtro de Bebedouro</button>
+                <button id="tab-estoque-materiais" class="tab-button">Estoque de Materiais</button>
+                <button id="tab-ferramentas" class="tab-button">Ferramentas de Trabalho</button>
+                <button id="tab-ordem-servico" class="tab-button">Ordem de Serviço</button>
+            </div>
+        </nav>
+
+        <!-- Conteúdo das Abas -->
+        <div id="content-area">
+            <!-- Conteúdo da aba de Visão Geral -->
+            <div id="content-visao-geral" class="tab-content">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Resumo Geral de Manutenção</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="visao-geral-summary-cards">
+                    <!-- Cartões de resumo geral serão inseridos aqui -->
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card p-4">
+                        <h3 class="text-xl font-bold text-slate-700 mb-4">Status de Todos os Projetos/Serviços</h3>
+                        <div class="chart-container">
+                            <canvas id="overallStatusChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card p-4">
+                        <h3 class="text-xl font-bold text-slate-700 mb-4">Materiais Críticos no Estoque</h3>
+                        <div class="chart-container">
+                            <canvas id="criticalStockChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conteúdo da aba de Reformas -->
+            <div id="content-reformas" class="tab-content hidden">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Visão Geral de Reformas</h2>
+                
+                <section id="reformas-summary-section" class="mb-8">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="reformas-summary-cards">
+                        <!-- Cartões de resumo de reformas serão inseridos aqui -->
+                    </div>
+                </section>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="lg:col-span-1 card p-4">
+                        <h3 class="text-xl font-bold text-slate-700 mb-4">Status dos Projetos</h3>
+                        <div class="chart-container">
+                            <canvas id="reformasStatusChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 card p-6">
+                        <h3 class="text-xl font-bold text-slate-700 mb-4">Projetos de Reformas Detalhados</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left text-slate-500">
+                                <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">Projeto</th>
+                                        <th scope="col" class="px-6 py-3">Unidade</th>
+                                        <th scope="col" class="px-6 py-3">Tipo de Reforma</th>
+                                        <th scope="col" class="px-6 py-3">Início</th>
+                                        <th scope="col" class="px-6 py-3">Fim Previsto</th>
+                                        <th scope="col" class="px-6 py-3">Status</th>
+                                        <th scope="col" class="px-6 py-3">Progresso</th>
+                                        <th scope="col" class="px-6 py-3">Responsável</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reformas-table-body">
+                                    <!-- Dados das reformas serão renderizados aqui pelo JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conteúdo da aba de Manutenção Geral -->
+            <div id="content-manutencao-geral" class="tab-content hidden">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Manutenção Geral (Lâmpadas, Elétrica, Bombas, Móveis)</h2>
+                <div class="card p-6">
+                    <p class="text-slate-600">Acompanhe os serviços de manutenção geral solicitados e concluídos.</p>
+                    <table class="w-full text-sm text-left text-slate-500 mt-4">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Local</th>
+                                <th scope="col" class="px-6 py-3">Tipo de Serviço</th>
+                                <th scope="col" class="px-6 py-3">Descrição Breve</th>
+                                <th scope="col" class="px-6 py-3">Data Solicitação</th>
+                                <th scope="col" class="px-6 py-3">Status</th>
+                                <th scope="col" class="px-6 py-3">Responsável</th>
+                            </tr>
+                        </thead>
+                        <tbody id="manutencao-geral-table-body">
+                            <!-- Dados de manutenção geral serão renderizados aqui pelo JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Conteúdo da aba de Manutenção de Ar Condicionado -->
+            <div id="content-ar-condicionado" class="tab-content hidden">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Manutenção de Ar Condicionado</h2>
+                <div class="card p-6">
+                    <p class="text-slate-600">Acompanhe as manutenções preventivas e corretivas dos aparelhos de ar condicionado.</p>
+                    <table class="w-full text-sm text-left text-slate-500 mt-4">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Local</th>
+                                <th scope="col" class="px-6 py-3">Última Manutenção</th>
+                                <th scope="col" class="px-6 py-3">Próxima Manutenção</th>
+                                <th scope="col" class="px-6 py-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-white border-b hover:bg-slate-50">
+                                <td class="px-6 py-4">Sala da Direção</td>
+                                <td class="px-6 py-4">10/06/2025</td>
+                                <td class="px-6 py-4">10/09/2025</td>
+                                <td class="px-6 py-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">OK</span></td>
+                            </tr>
+                            <tr class="bg-white border-b hover:bg-slate-50">
+                                <td class="px-6 py-4">Recepção Principal</td>
+                                <td class="px-6 py-4">05/05/2025</td>
+                                <td class="px-6 py-4">05/08/2025</td>
+                                <td class="px-6 py-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Aguardando</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Conteúdo da aba de Troca de Filtro de Bebedouro -->
+            <div id="content-bebedouro" class="tab-content hidden">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Troca de Filtro de Bebedouro</h2>
+                <div class="card p-6">
+                    <p class="text-slate-600">Registro das trocas de filtro dos bebedouros da secretaria.</p>
+                    <table class="w-full text-sm text-left text-slate-500 mt-4">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Local do Bebedouro</th>
+                                <th scope="col" class="px-6 py-3">Última Troca</th>
+                                <th scope="col" class="px-6 py-3">Próxima Troca (Estimada)</th>
+                                <th scope="col" class="px-6 py-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="bg-white border-b hover:bg-slate-50">
+                                <td class="px-6 py-4">Copa - Térreo</td>
+                                <td class="px-6 py-4">20/06/2025</td>
+                                <td class="px-6 py-4">20/09/2025</td>
+                                <td class="px-6 py-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Em dia</span></td>
+                            </tr>
+                            <tr class="bg-white border-b hover:bg-slate-50">
+                                <td class="px-6 py-4">Corredor 2º Andar</td>
+                                <td class="px-6 py-4">10/03/2025</td>
+                                <td class="px-6 py-4">10/06/2025</td>
+                                <td class="px-6 py-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Atrasado</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Conteúdo da aba de Estoque de Materiais -->
+            <div id="content-estoque-materiais" class="tab-content hidden">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Estoque de Materiais de Manutenção</h2>
+                <div class="card p-6">
+                    <p class="text-slate-600">Visualize o estoque atual de materiais. (Sem valores monetários)</p>
+                    <div class="chart-container mb-4">
+                        <h3 class="text-xl font-bold text-slate-700 mb-2">Itens de Estoque para Reposição</h3>
+                        <canvas id="estoqueStatusChart"></canvas>
+                    </div>
+                    <table class="w-full text-sm text-left text-slate-500 mt-4">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Material</th>
+                                <th scope="col" class="px-6 py-3">Unidade de Medida</th>
+                                <th scope="col" class="px-6 py-3">Quantidade em Estoque</th>
+                                <th scope="col" class="px-6 py-3">Nível Mínimo</th>
+                                <th scope="col" class="px-6 py-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="estoque-materiais-body">
+                            <!-- Dados do estoque serão renderizados aqui pelo JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Conteúdo da aba de Ferramentas de Trabalho -->
+            <div id="content-ferramentas" class="tab-content hidden">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Ferramentas de Trabalho</h2>
+                <div class="card p-6">
+                    <p class="text-slate-600">Inventário das ferramentas disponíveis para a equipe de manutenção.</p>
+                    <table class="w-full text-sm text-left text-slate-500 mt-4">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Nome da Ferramenta</th>
+                                <th scope="col" class="px-6 py-3">Quantidade</th>
+                                <th scope="col" class="px-6 py-3">Localização</th>
+                                <th scope="col" class="px-6 py-3">Status</th>
+                                <th scope="col" class="px-6 py-3">Responsável (se em uso)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ferramentas-table-body">
+                            <!-- Dados das ferramentas serão renderizados aqui pelo JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Conteúdo da aba de Ordem de Serviço -->
+            <div id="content-ordem-servico" class="tab-content hidden">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Registro de Ordem de Serviço</h2>
+                <div class="card p-6">
+                    <p class="text-slate-600 mb-4">Preencha o formulário abaixo para registrar uma nova ordem de serviço.</p>
+                    <form id="os-form" class="space-y-4">
+                        <div>
+                            <label for="os-solicitante" class="block text-sm font-medium text-slate-600 mb-1">Solicitante</label>
+                            <input type="text" id="os-solicitante" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Nome do Solicitante" required>
+                        </div>
+                        <div>
+                            <label for="os-local" class="block text-sm font-medium text-slate-600 mb-1">Local da Solicitação</label>
+                            <input type="text" id="os-local" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: Sala 101, Recepção" required>
+                        </div>
+                        <div>
+                            <label for="os-tipo-servico" class="block text-sm font-medium text-slate-600 mb-1">Tipo de Serviço</label>
+                            <select id="os-tipo-servico" class="w-full p-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                                <option value="">Selecione...</option>
+                                <option value="reforma_pequena">Reforma Pequena</option>
+                                <option value="reforma_unidade">Reforma de Unidade</option>
+                                <option value="ar_condicionado">Manutenção de Ar Condicionado</option>
+                                <option value="bebedouro">Troca de Filtro de Bebedouro</option>
+                                <option value="troca_lampada">Troca de Lâmpada</option>
+                                <option value="fios_eletricos">Fiação Elétrica</option>
+                                <option value="bomba_agua">Bomba D'água</option>
+                                <option value="reforma_moveis">Reforma de Móveis</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="os-descricao" class="block text-sm font-medium text-slate-600 mb-1">Descrição do Problema</label>
+                            <textarea id="os-descricao" rows="4" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Descreva detalhadamente o problema ou solicitação." required></textarea>
+                        </div>
+                        <button type="submit" class="w-full p-3 bg-blue-600 text-white font-semibold rounded-lg text-base hover:bg-blue-700 transition-colors">Registrar Ordem de Serviço</button>
+                    </form>
+                    <div id="os-message" class="mt-4 p-3 rounded-lg text-center hidden"></div>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="text-center mt-8 text-sm text-gray-500">
+            <p>Painel desenvolvido por: Jurandy & Colaboradores</p>
+        </footer>
+
+    </div>
+
+    <script type="text/javascript">
+        // --- Variáveis e Dados de Exemplo ---
+        let currentActiveTab = 'visao-geral'; // Aba ativa inicialmente
+        let reformasStatusChartInstance; // Instância do Chart.js para reformas
+        let reformasTypeChartInstance; // Instância do Chart.js para tipos de reforma
+        let estoqueStatusChartInstance; // Instância do Chart.js para estoque
+        let overallStatusChartInstance; // Instância do Chart.js para status geral
+        let criticalStockChartInstance; // Instância do Chart.js para estoque crítico
+
+        // Dados de exemplo para a aba de Estoque de Materiais
+        const mockEstoqueMateriais = [
+            { material: 'Lâmpada LED (9W)', unidade: 'unidade', quantidade: 50, minimo: 10, status: 'OK' },
+            { material: 'Filtro Bebedouro (modelo X)', unidade: 'unidade', quantidade: 5, minimo: 3, status: 'OK' },
+            { material: 'Cabo de Rede (Cat6)', unidade: 'metro', quantidade: 100, minimo: 20, status: 'OK' },
+            { material: 'Tinta Acrílica (Branca)', unidade: 'litro', quantidade: 8, minimo: 10, status: 'Abaixo do Mínimo' },
+            { material: 'Parafusos Diversos', unidade: 'caixa', quantidade: 2, minimo: 5, status: 'Abaixo do Mínimo' },
+            { material: 'Gás Refrigerante (R410a)', unidade: 'kg', quantidade: 3, minimo: 2, status: 'OK' },
+            { material: 'Disjuntor (20A)', unidade: 'unidade', quantidade: 1, minimo: 5, status: 'Crítico' },
+            { material: 'Fita Isolante', unidade: 'rolo', quantidade: 7, minimo: 10, status: 'Abaixo do Mínimo' }
+        ];
+
+        // Dados de exemplo para a aba de Reformas
+        const mockReformasData = [
+            { id: 1, projeto: 'Reforma Sala de Reuniões', unidade: 'Secretaria Central', tipo: 'Pintura/Elétrica', dataInicio: '01/07/2025', dataFimPrevista: '30/07/2025', status: 'Em Andamento', progresso: 80, responsavel: 'Equipe A', typeReforma: 'Pequena' },
+            { id: 2, projeto: 'Pintura Hall de Entrada', unidade: 'Secretaria Central', tipo: 'Pintura', dataInicio: '15/07/2025', dataFimPrevista: '20/07/2025', status: 'Pendente', progresso: 0, responsavel: 'Equipe B', typeReforma: 'Pequena' },
+            { id: 3, projeto: 'Reparo Telhado Anexo', unidade: 'Anexo Administrativo', tipo: 'Alvenaria', dataInicio: '20/06/2025', dataFimPrevista: '28/06/2025', status: 'Concluído', progresso: 100, responsavel: 'Equipe C', typeReforma: 'Pequena' },
+            { id: 4, projeto: 'Reforma Unidade CRAS Centro', unidade: 'CRAS Centro', tipo: 'Geral', dataInicio: '01/07/2025', dataFimPrevista: '30/09/2025', status: 'Em Andamento', responsavel: 'Equipe A', typeReforma: 'Unidade',
+                phases: [
+                    { name: 'Demolição', progresso: 100, status: 'Concluído' },
+                    { name: 'Alvenaria', progresso: 70, status: 'Em Andamento' },
+                    { name: 'Elétrica', progresso: 30, status: 'Em Andamento' },
+                    { name: 'Pintura', progresso: 0, status: 'Pendente' },
+                    { name: 'Acabamento', progresso: 0, status: 'Pendente' }
+                ]
+            },
+            { id: 5, projeto: 'Troca de Pisos Cozinha', unidade: 'Secretaria Central', tipo: 'Piso', dataInicio: '01/08/2025', dataFimPrevista: '10/08/2025', status: 'Pendente', progresso: 0, responsavel: 'Equipe B', typeReforma: 'Pequena' },
+            { id: 6, projeto: 'Manutenção Hidráulica Banheiros', unidade: 'Anexo Administrativo', tipo: 'Hidráulica', dataInicio: '01/06/2025', dataFimPrevista: '05/06/2025', status: 'Concluído', progresso: 100, responsavel: 'Equipe C', typeReforma: 'Pequena' },
+            { id: 7, projeto: 'Reforma Unidade CREAS Leste', unidade: 'CREAS Leste', tipo: 'Geral', dataInicio: '10/06/2025', dataFimPrevista: '10/09/2025', status: 'Concluído', responsavel: 'Equipe D', typeReforma: 'Unidade',
+                phases: [
+                    { name: 'Demolição', progresso: 100, status: 'Concluído' },
+                    { name: 'Alvenaria', progresso: 100, status: 'Concluído' },
+                    { name: 'Elétrica', progresso: 100, status: 'Concluído' },
+                    { name: 'Pintura', progresso: 100, status: 'Concluído' }
+                ]
+            }
+        ];
+
+        // Dados de exemplo para a aba de Manutenção Geral
+        const mockManutencaoGeralData = [
+            { id: 101, local: 'Sala 101', tipoServico: 'Troca de Lâmpada', descricao: 'Lâmpada queimada no teto', dataSolicitacao: '01/07/2025', status: 'Pendente', responsavel: 'Equipe A' },
+            { id: 102, local: 'Recepção', tipoServico: 'Fiação Elétrica', descricao: 'Tomada com mau contato', dataSolicitacao: '02/07/2025', status: 'Em Andamento', responsavel: 'Equipe B' },
+            { id: 103, local: 'Jardim', tipoServico: 'Bomba D\'água', descricao: 'Bomba não liga', dataSolicitacao: '28/06/2025', status: 'Concluído', responsavel: 'Equipe C' },
+            { id: 104, local: 'Sala de Espera', tipoServico: 'Reforma de Móveis', descricao: 'Cadeira com encosto quebrado', dataSolicitacao: '03/07/2025', status: 'Pendente', responsavel: 'Equipe A' },
+            { id: 105, local: 'Corredor 3º Andar', tipoServico: 'Troca de Lâmpada', descricao: 'Lâmpada piscando', dataSolicitacao: '04/07/2025', status: 'Pendente', responsavel: 'Equipe A' }
+        ];
+
+        // Dados de exemplo para a aba de Ferramentas de Trabalho
+        const mockFerramentasData = [
+            { nome: 'Furadeira de Impacto', quantidade: 2, localizacao: 'Almoxarifado', status: 'Disponível', responsavel: 'N/A' },
+            { nome: 'Caixa de Ferramentas (Básica)', quantidade: 5, localizacao: 'Almoxarifado', status: 'Disponível', responsavel: 'N/A' },
+            { nome: 'Multímetro Digital', quantidade: 3, localizacao: 'Almoxarifado', status: 'Em Uso', responsavel: 'João' },
+            { nome: 'Escada Articulada (5m)', quantidade: 1, localizacao: 'Depósito', status: 'Em Manutenção', responsavel: 'N/A' },
+            { nome: 'Chave de Fenda (conjunto)', quantidade: 10, localizacao: 'Almoxarifado', status: 'Disponível', responsavel: 'N/A' }
+        ];
+
+
+        // --- Funções de Utilitário ---
+
+        /**
+         * Calcula o progresso geral de uma reforma de unidade com base no progresso de suas fases.
+         * @param {Array<Object>} phases - Array de objetos de fases, cada um com uma propriedade 'progresso'.
+         * @returns {number} O progresso médio arredondado das fases.
+         */
+        function calculateOverallProgress(phases) {
+            if (!phases || phases.length === 0) return 0;
+            const totalProgress = phases.reduce((sum, phase) => sum + phase.progresso, 0);
+            return Math.round(totalProgress / phases.length);
+        }
+
+        /**
+         * Atualiza o horário da última atualização no cabeçalho.
+         */
+        function updateLastUpdateTime() {
+            const now = new Date();
+            const formattedDate = now.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const updateEl = document.getElementById('last-update-time');
+            if (updateEl) {
+                updateEl.textContent = `Dados atualizados em: ${formattedDate}`;
+            }
+        }
+
+        /**
+         * Renderiza a tabela de estoque de materiais e o gráfico de status de estoque.
+         */
+        function renderEstoqueMateriais() {
+            const tbody = document.getElementById('estoque-materiais-body');
+            const estoqueStatusChartCanvas = document.getElementById('estoqueStatusChart');
+            if (!tbody || !estoqueStatusChartCanvas) return;
+
+            let tableHTML = '';
+            mockEstoqueMateriais.forEach(item => {
+                let statusClass = '';
+                if (item.status === 'OK') {
+                    statusClass = 'bg-green-100 text-green-800';
+                } else if (item.status === 'Abaixo do Mínimo') {
+                    statusClass = 'bg-yellow-100 text-yellow-800';
+                } else if (item.status === 'Crítico') {
+                    statusClass = 'bg-red-100 text-red-800';
+                }
+
+                tableHTML += `
+                    <tr class="bg-white border-b hover:bg-slate-50">
+                        <td class="px-6 py-4 font-medium text-slate-900">${item.material}</td>
+                        <td class="px-6 py-4">${item.unidade}</td>
+                        <td class="px-6 py-4 text-center">${item.quantidade}</td>
+                        <td class="px-6 py-4 text-center">${item.minimo}</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                                ${item.status}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = tableHTML;
+
+            // --- Renderizar Gráfico de Barras de Estoque Crítico/Abaixo do Mínimo ---
+            const lowStockItems = mockEstoqueMateriais.filter(item => item.status === 'Abaixo do Mínimo' || item.status === 'Crítico');
+            const labels = lowStockItems.map(item => item.material);
+            const data = lowStockItems.map(item => item.quantidade);
+            const backgroundColors = lowStockItems.map(item => item.status === 'Crítico' ? '#EF4444' : '#F59E0B'); // Red for critical, Amber for low
+
+            if (estoqueStatusChartInstance) {
+                estoqueStatusChartInstance.destroy();
+            }
+
+            if (labels.length > 0) {
+                estoqueStatusChartInstance = new Chart(estoqueStatusChartCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Quantidade em Estoque',
+                            data: data,
+                            backgroundColor: backgroundColors,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false,
+                            },
+                            title: {
+                                display: false,
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                estoqueStatusChartCanvas.parentNode.innerHTML = '<p class="text-center text-slate-500 py-4">Nenhum item abaixo do nível mínimo.</p>';
+            }
+        }
+
+        /**
+         * Renderiza o conteúdo da aba de Reformas, incluindo gráficos e tabela.
+         */
+        function renderReformas() {
+            const reformasTableBody = document.getElementById('reformas-table-body');
+            const reformasStatusChartCanvas = document.getElementById('reformasStatusChart');
+            const reformasSummaryCards = document.getElementById('reformas-summary-cards');
+
+            if (!reformasTableBody || !reformasStatusChartCanvas || !reformasSummaryCards) return;
+
+            // --- Renderizar Cartões de Resumo ---
+            const totalProjetos = mockReformasData.length;
+            const projetosEmAndamento = mockReformasData.filter(p => p.status === 'Em Andamento').length;
+            const projetosConcluidos = mockReformasData.filter(p => p.status === 'Concluído').length;
+
+            reformasSummaryCards.innerHTML = `
+                <div class="card p-5 flex items-center space-x-4">
+                    <div class="bg-blue-100 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path></svg>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-sm">Total de Projetos</p>
+                        <p class="text-2xl font-bold text-slate-800">${totalProjetos}</p>
+                    </div>
+                </div>
+                <div class="card p-5 flex items-center space-x-4">
+                    <div class="bg-yellow-100 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-600"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-sm">Em Andamento</p>
+                        <p class="text-2xl font-bold text-slate-800">${projetosEmAndamento}</p>
+                    </div>
+                </div>
+                <div class="card p-5 flex items-center space-x-4">
+                    <div class="bg-green-100 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-sm">Concluídos</p>
+                        <p class="text-2xl font-bold text-slate-800">${projetosConcluidos}</p>
+                    </div>
+                </div>
+            `;
+
+            // --- Renderizar Tabela de Reformas ---
+            let tableHTML = '';
+            mockReformasData.forEach(projeto => {
+                let statusClass = '';
+                let progressColor = 'bg-blue-400';
+                
+                // Determina a cor e classe do status
+                if (projeto.status === 'Concluído') {
+                    statusClass = 'bg-green-100 text-green-800';
+                    progressColor = 'bg-green-500';
+                } else if (projeto.status === 'Em Andamento') {
+                    statusClass = 'bg-yellow-100 text-yellow-800';
+                    progressColor = 'bg-blue-500';
+                } else if (projeto.status === 'Pendente') {
+                    statusClass = 'bg-gray-100 text-gray-800';
+                    progressColor = 'bg-gray-400';
+                } else if (projeto.status === 'Cancelado') {
+                    statusClass = 'bg-red-100 text-red-800';
+                    progressColor = 'bg-red-500';
+                }
+
+                // Calcula o progresso a ser exibido
+                let displayProgress = projeto.progresso;
+                let progressDetails = '';
+                if (projeto.typeReforma === 'Unidade' && projeto.phases) {
+                    displayProgress = calculateOverallProgress(projeto.phases);
+                    progressDetails = `<ul class="text-xs text-slate-500 mt-1">`;
+                    projeto.phases.forEach(phase => {
+                        progressDetails += `<li>${phase.name}: ${phase.progresso}% (${phase.status})</li>`;
+                    });
+                    progressDetails += `</ul>`;
+                }
+
+                tableHTML += `
+                    <tr class="bg-white border-b hover:bg-slate-50">
+                        <td class="px-6 py-4 font-medium text-slate-900">${projeto.projeto}</td>
+                        <td class="px-6 py-4">${projeto.unidade}</td>
+                        <td class="px-6 py-4">${projeto.typeReforma}</td>
+                        <td class="px-6 py-4">${projeto.dataInicio}</td>
+                        <td class="px-6 py-4">${projeto.dataFimPrevista}</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                                ${projeto.status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="progress-bar-container">
+                                <div class="progress-bar ${progressColor}" style="width: ${displayProgress}%"></div>
+                            </div>
+                            <span class="text-xs text-slate-500 mt-1 block">${displayProgress}%</span>
+                            ${progressDetails}
+                        </td>
+                        <td class="px-6 py-4">${projeto.responsavel}</td>
+                    </tr>
+                `;
+            });
+            reformasTableBody.innerHTML = tableHTML;
+
+            // --- Renderizar Gráfico de Pizza de Status ---
+            const statusCounts = mockReformasData.reduce((acc, projeto) => {
+                acc[projeto.status] = (acc[projeto.status] || 0) + 1;
+                return acc;
+            }, {});
+
+            const labels = Object.keys(statusCounts);
+            const data = Object.values(statusCounts);
+            const backgroundColors = labels.map(status => {
+                if (status === 'Concluído') return '#10B981'; // green-500
+                if (status === 'Em Andamento') return '#3B82F6'; // blue-500
+                if (status === 'Pendente') return '#9CA3AF'; // gray-400
+                if (status === 'Cancelado') return '#EF4444'; // red-500
+                return '#cccccc';
+            });
+
+            if (reformasStatusChartInstance) {
+                reformasStatusChartInstance.destroy();
+            }
+
+            reformasStatusChartInstance = new Chart(reformasStatusChartCanvas, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: false,
+                            text: 'Status dos Projetos de Reformas'
+                        }
+                    }
+                }
+            });
+        }
+
+        /**
+         * Renderiza a tabela de Manutenção Geral.
+         */
+        function renderManutencaoGeral() {
+            const tbody = document.getElementById('manutencao-geral-table-body');
+            if (!tbody) return;
+
+            let tableHTML = '';
+            mockManutencaoGeralData.forEach(item => {
+                let statusClass = '';
+                if (item.status === 'Concluído') {
+                    statusClass = 'bg-green-100 text-green-800';
+                } else if (item.status === 'Em Andamento') {
+                    statusClass = 'bg-yellow-100 text-yellow-800';
+                } else if (item.status === 'Pendente') {
+                    statusClass = 'bg-gray-100 text-gray-800';
+                }
+
+                tableHTML += `
+                    <tr class="bg-white border-b hover:bg-slate-50">
+                        <td class="px-6 py-4">${item.local}</td>
+                        <td class="px-6 py-4 font-medium text-slate-900">${item.tipoServico}</td>
+                        <td class="px-6 py-4">${item.descricaoBreve}</td>
+                        <td class="px-6 py-4">${item.dataSolicitacao}</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                                ${item.status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">${item.responsavel}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = tableHTML;
+        }
+
+        /**
+         * Renderiza a tabela de Ferramentas de Trabalho.
+         */
+        function renderFerramentas() {
+            const tbody = document.getElementById('ferramentas-table-body');
+            if (!tbody) return;
+
+            let tableHTML = '';
+            mockFerramentasData.forEach(item => {
+                let statusClass = '';
+                if (item.status === 'Disponível') {
+                    statusClass = 'bg-green-100 text-green-800';
+                } else if (item.status === 'Em Uso') {
+                    statusClass = 'bg-blue-100 text-blue-800';
+                } else if (item.status === 'Em Manutenção') {
+                    statusClass = 'bg-yellow-100 text-yellow-800';
+                }
+
+                tableHTML += `
+                    <tr class="bg-white border-b hover:bg-slate-50">
+                        <td class="px-6 py-4 font-medium text-slate-900">${item.nome}</td>
+                        <td class="px-6 py-4 text-center">${item.quantidade}</td>
+                        <td class="px-6 py-4">${item.localizacao}</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                                ${item.status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">${item.responsavel}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = tableHTML;
+        }
+
+        /**
+         * Renderiza a Visão Geral do painel, incluindo cartões de resumo e gráficos gerais.
+         */
+        function renderVisaoGeral() {
+            const visaoGeralSummaryCards = document.getElementById('visao-geral-summary-cards');
+            const overallStatusChartCanvas = document.getElementById('overallStatusChart');
+            const criticalStockChartCanvas = document.getElementById('criticalStockChart');
+
+            // --- Calcular Resumos Gerais ---
+            const totalOS = mockReformasData.length + mockManutencaoGeralData.length; // Simplificado para exemplo
+            const osConcluidas = mockReformasData.filter(p => p.status === 'Concluído').length + mockManutencaoGeralData.filter(m => m.status === 'Concluído').length;
+            const osEmAndamento = mockReformasData.filter(p => p.status === 'Em Andamento').length + mockManutencaoGeralData.filter(m => m.status === 'Em Andamento').length;
+            const osPendentes = totalOS - osConcluidas - osEmAndamento;
+            const materiaisCriticos = mockEstoqueMateriais.filter(item => item.status === 'Crítico' || item.status === 'Abaixo do Mínimo').length;
+
+            visaoGeralSummaryCards.innerHTML = `
+                <div class="card p-5 flex items-center space-x-4">
+                    <div class="bg-blue-100 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="10" y2="9"></line></svg>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-sm">Total de OS</p>
+                        <p class="text-2xl font-bold text-slate-800">${totalOS}</p>
+                    </div>
+                </div>
+                <div class="card p-5 flex items-center space-x-4">
+                    <div class="bg-green-100 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-sm">OS Concluídas</p>
+                        <p class="text-2xl font-bold text-slate-800">${osConcluidas}</p>
+                    </div>
+                </div>
+                <div class="card p-5 flex items-center space-x-4">
+                    <div class="bg-yellow-100 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-600"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-sm">OS Em Andamento</p>
+                        <p class="text-2xl font-bold text-slate-800">${osEmAndamento}</p>
+                    </div>
+                </div>
+                <div class="card p-5 flex items-center space-x-4">
+                    <div class="bg-red-100 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 text-sm">Materiais Críticos</p>
+                        <p class="text-2xl font-bold text-slate-800">${materiaisCriticos}</p>
+                    </div>
+                </div>
+            `;
+
+            // --- Gráfico de Status Geral (Pizza) ---
+            const overallStatusCounts = {
+                'Concluído': osConcluidas,
+                'Em Andamento': osEmAndamento,
+                'Pendente': osPendentes
+            };
+            const overallLabels = Object.keys(overallStatusCounts);
+            const overallData = Object.values(overallStatusCounts);
+            const overallBackgroundColors = ['#10B981', '#3B82F6', '#9CA3AF']; // Green, Blue, Gray
+
+            if (overallStatusChartInstance) {
+                overallStatusChartInstance.destroy();
+            }
+            overallStatusChartInstance = new Chart(overallStatusChartCanvas, {
+                type: 'pie',
+                data: {
+                    labels: overallLabels,
+                    datasets: [{
+                        data: overallData,
+                        backgroundColor: overallBackgroundColors,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: { display: false }
+                    }
+                }
+            });
+
+            // --- Gráfico de Estoque Crítico (Barras) ---
+            const criticalItems = mockEstoqueMateriais.filter(item => item.status === 'Crítico' || item.status === 'Abaixo do Mínimo');
+            const criticalLabels = criticalItems.map(item => item.material);
+            const criticalData = criticalItems.map(item => item.quantidade);
+            const criticalBackgroundColors = criticalItems.map(item => item.status === 'Crítico' ? '#EF4444' : '#F59E0B');
+
+            if (criticalStockChartInstance) {
+                criticalStockChartInstance.destroy();
+            }
+
+            if (criticalLabels.length > 0) {
+                criticalStockChartInstance = new Chart(criticalStockChartCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: criticalLabels,
+                        datasets: [{
+                            label: 'Qtd. em Estoque',
+                            data: criticalData,
+                            backgroundColor: criticalBackgroundColors,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            title: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { precision: 0 } }
+                        }
+                    }
+                });
+            } else {
+                criticalStockChartCanvas.parentNode.innerHTML = '<p class="text-center text-slate-500 py-4">Nenhum material crítico no estoque.</p>';
+            }
+        }
+
+        /**
+         * Lida com o envio do formulário de Ordem de Serviço.
+         * @param {Event} event - O evento de envio do formulário.
+         */
+        function handleOsFormSubmit(event) {
+            event.preventDefault(); // Previne o envio padrão do formulário
+            
+            const solicitante = document.getElementById('os-solicitante').value;
+            const local = document.getElementById('os-local').value;
+            const tipoServico = document.getElementById('os-tipo-servico').value;
+            const descricao = document.getElementById('os-descricao').value;
+            const osMessageEl = document.getElementById('os-message');
+
+            // Simula o envio de dados (em um ambiente real, você enviaria para um Apps Script/API)
+            console.log('Nova Ordem de Serviço Registrada:', {
+                solicitante,
+                local,
+                tipoServico,
+                descricao,
+                data: new Date().toLocaleString()
+            });
+
+            // Exibe mensagem de sucesso
+            osMessageEl.classList.remove('hidden', 'bg-red-100', 'text-red-800');
+            osMessageEl.classList.add('bg-green-100', 'text-green-800');
+            osMessageEl.innerHTML = `<strong>Sucesso!</strong> Ordem de Serviço registrada com sucesso.<br>Aguarde o contato da equipe de manutenção.`;
+
+            // Limpa o formulário após o envio
+            document.getElementById('os-form').reset();
+
+            // Opcional: Esconde a mensagem após alguns segundos
+            setTimeout(() => {
+                osMessageEl.classList.add('hidden');
+            }, 5000);
+        }
+
+        // --- Lógica de Abas ---
+
+        /**
+         * Alterna a aba ativa e exibe o conteúdo correspondente.
+         * @param {string} tabId - O ID da aba a ser ativada (ex: 'reformas', 'estoque-materiais').
+         */
+        function switchTab(tabId) {
+            // Remove a classe 'active' de todos os botões de aba
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // Adiciona a classe 'active' ao botão da aba clicada
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+
+            // Esconde todos os conteúdos das abas
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            // Exibe o conteúdo da aba clicada
+            document.getElementById(`content-${tabId}`).classList.remove('hidden');
+
+            currentActiveTab = tabId; // Atualiza a aba ativa
+
+            // Renderiza conteúdo específico para a aba, se necessário
+            if (tabId === 'visao-geral') {
+                renderVisaoGeral();
+            } else if (tabId === 'reformas') {
+                renderReformas();
+            } else if (tabId === 'manutencao-geral') {
+                renderManutencaoGeral();
+            } else if (tabId === 'estoque-materiais') {
+                renderEstoqueMateriais();
+            } else if (tabId === 'ferramentas') {
+                renderFerramentas();
+            }
+            // Outras abas podem ter funções de renderização específicas aqui
+        }
+
+        // --- Inicialização da Aplicação ---
+        document.addEventListener('DOMContentLoaded', () => {
+            updateLastUpdateTime(); // Atualiza o horário ao carregar
+
+            // Adiciona event listeners para os botões das abas
+            document.getElementById('tab-visao-geral').addEventListener('click', () => switchTab('visao-geral'));
+            document.getElementById('tab-reformas').addEventListener('click', () => switchTab('reformas'));
+            document.getElementById('tab-manutencao-geral').addEventListener('click', () => switchTab('manutencao-geral'));
+            document.getElementById('tab-ar-condicionado').addEventListener('click', () => switchTab('ar-condicionado'));
+            document.getElementById('tab-bebedouro').addEventListener('click', () => switchTab('bebedouro'));
+            document.getElementById('tab-estoque-materiais').addEventListener('click', () => switchTab('estoque-materiais'));
+            document.getElementById('tab-ferramentas').addEventListener('click', () => switchTab('ferramentas'));
+            document.getElementById('tab-ordem-servico').addEventListener('click', () => switchTab('ordem-servico'));
+
+            // Adiciona event listener para o formulário de Ordem de Serviço
+            const osForm = document.getElementById('os-form');
+            if (osForm) {
+                osForm.addEventListener('submit', handleOsFormSubmit);
+            }
+
+            // Ativa a aba inicial (Visão Geral)
+            switchTab(currentActiveTab);
+        });
+    </script>
+</body>
+</html>
