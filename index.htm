@@ -514,7 +514,7 @@
             
             // ATENÇÃO: SUBSTITUA PELA URL DE IMPLANTAÇÃO DO SEU GOOGLE APPS SCRIPT
             // Exemplo: 'https://script.google.com/macros/s/AKfycbz.../exec'
-            const GAS_WEB_APP_URL = 'SUA_URL_DO_GOOGLE_APPS_SCRIPT_AQUI'; 
+            const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbz9rjeJXmkwRSLn-UXGJodVhqE5qT5p7RS1C4FEjKVWmNCvyOqbqA1LD0CHqHPxSaHX1w/exec'; 
 
             const photoModal = document.getElementById('photoModal');
             const modalContent = document.getElementById('modalContent');
@@ -598,20 +598,26 @@
                 } else {
                     try {
                         const response = await fetch(`${GAS_WEB_APP_URL}?action=getAgendamentoDetails&rdoNum=${selectedRdoNum}`);
-                        const agendamento = await response.json();
+                        const agendamento = await response.json(); // Removido mode: 'no-cors'
 
                         if (agendamento && agendamento.unidade) {
                             document.getElementById('unidade').value = agendamento.unidade;
                             document.getElementById('tarefas').value = agendamento.descricao || '';
                         } else {
-                            alert('Agendamento não encontrado ou dados incompletos.');
+                            // Usando console.error e mensagem na UI em vez de alert()
+                            console.error('Agendamento não encontrado ou dados incompletos.');
+                            mensagemStatus.textContent = 'Agendamento não encontrado ou dados incompletos.';
+                            mensagemStatus.classList.add('error');
+                            mensagemStatus.style.display = 'block';
                             laudoForm.reset();
                             previewFotosDiv.innerHTML = '';
                             document.getElementById('fiscal').value = 'Cleyton Jorge Dias';
                         }
                     } catch (error) {
                         console.error('Erro ao buscar detalhes do agendamento:', error);
-                        alert('Erro ao carregar detalhes do agendamento. Tente novamente.');
+                        mensagemStatus.textContent = 'Erro ao carregar detalhes do agendamento. Tente novamente.';
+                        mensagemStatus.classList.add('error');
+                        mensagemStatus.style.display = 'block';
                         laudoForm.reset();
                         previewFotosDiv.innerHTML = '';
                         document.getElementById('fiscal').value = 'Cleyton Jorge Dias';
@@ -666,23 +672,28 @@
                 try {
                     const response = await fetch(GAS_WEB_APP_URL, {
                         method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json' }, // Removido mode: 'no-cors'
                         body: JSON.stringify(data),
                     });
-                    // Como estamos usando 'no-cors', a resposta direta não é lida,
-                    // mas o PDF é gerado no Apps Script.
-                    mensagemStatus.textContent = 'Laudo enviado com sucesso! O PDF foi gerado e salvo no Google Drive.';
-                    mensagemStatus.style.backgroundColor = '#d4edda';
-                    mensagemStatus.style.borderColor = '#c3e6cb';
-                    mensagemStatus.style.color = '#155724';
-                    laudoForm.reset();
-                    previewFotosDiv.innerHTML = '';
-                    document.getElementById('fiscal').value = 'Cleyton Jorge Dias';
-                    await carregarAgendamentosPendentesParaRDO();
+                    const result = await response.json(); // Tenta ler a resposta JSON
+
+                    if (result.success) {
+                        mensagemStatus.textContent = 'Laudo enviado com sucesso! O PDF foi gerado e salvo no Google Drive.';
+                        mensagemStatus.style.backgroundColor = '#d4edda';
+                        mensagemStatus.style.borderColor = '#c3e6cb';
+                        mensagemStatus.style.color = '#155724';
+                        laudoForm.reset();
+                        previewFotosDiv.innerHTML = '';
+                        document.getElementById('fiscal').value = 'Cleyton Jorge Dias';
+                        await carregarAgendamentosPendentesParaRDO();
+                        await carregarRdosConcluidos(); // Recarrega a lista de RDOs
+                    } else {
+                        mensagemStatus.textContent = `Erro ao enviar o laudo: ${result.message}`;
+                        mensagemStatus.classList.add('error');
+                    }
                 } catch (error) {
                     console.error('Erro ao enviar o laudo:', error);
-                    mensagemStatus.textContent = 'Erro ao enviar o laudo. Tente novamente.';
+                    mensagemStatus.textContent = 'Erro ao enviar o laudo. Verifique o console para mais detalhes.';
                     mensagemStatus.classList.add('error');
                 }
             });
@@ -704,21 +715,27 @@
                 };
                 
                 try {
-                    await fetch(GAS_WEB_APP_URL, {
+                    const response = await fetch(GAS_WEB_APP_URL, {
                         method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json' }, // Removido mode: 'no-cors'
                         body: JSON.stringify(data),
                     });
-                    mensagemAgendamentoStatus.textContent = 'Agendamento salvo com sucesso!';
-                    mensagemAgendamentoStatus.style.backgroundColor = '#d4edda';
-                    mensagemAgendamentoStatus.style.borderColor = '#c3e6cb';
-                    mensagemAgendamentoStatus.color = '#155724';
-                    agendamentoForm.reset();
-                    await carregarAgendamentos();
+                    const result = await response.json(); // Tenta ler a resposta JSON
+
+                    if (result.success) {
+                        mensagemAgendamentoStatus.textContent = 'Agendamento salvo com sucesso!';
+                        mensagemAgendamentoStatus.style.backgroundColor = '#d4edda';
+                        mensagemAgendamentoStatus.style.borderColor = '#c3e6cb';
+                        mensagemAgendamentoStatus.style.color = '#155724';
+                        agendamentoForm.reset();
+                        await carregarAgendamentos();
+                    } else {
+                        mensagemAgendamentoStatus.textContent = `Erro ao salvar agendamento: ${result.message}`;
+                        mensagemAgendamentoStatus.classList.add('error');
+                    }
                 } catch (error) {
                     console.error('Erro ao salvar agendamento:', error);
-                    mensagemAgendamentoStatus.textContent = 'Erro ao salvar agendamento. Tente novamente.';
+                    mensagemAgendamentoStatus.textContent = 'Erro ao salvar agendamento. Verifique o console para mais detalhes.';
                     mensagemAgendamentoStatus.classList.add('error');
                 }
             });
@@ -728,7 +745,7 @@
                 listaRdos.innerHTML = '<p class="loading-text">Carregando relatórios...</p>';
                 try {
                     const response = await fetch(GAS_WEB_APP_URL + '?action=getListaRDOs');
-                    const rdos = await response.json();
+                    const rdos = await response.json(); // Removido mode: 'no-cors'
                     
                     listaRdos.innerHTML = '';
                     if (rdos.length > 0) {
@@ -787,7 +804,7 @@
 
                 try {
                     const response = await fetch(GAS_WEB_APP_URL + '?action=getAgendamentos');
-                    const agendamentos = await response.json();
+                    const agendamentos = await response.json(); // Removido mode: 'no-cors'
 
                     listaAgendamentos.innerHTML = '';
                     if (agendamentos.length > 0) {
@@ -826,7 +843,7 @@
                 tipoRDOSelect.innerHTML = '<option value="novo">Carregando agendamentos...</option>';
                 try {
                     const response = await fetch(GAS_WEB_APP_URL + '?action=getPendingAgendamentos');
-                    const agendamentosPendentes = await response.json();
+                    const agendamentosPendentes = await response.json(); // Removido mode: 'no-cors'
 
                     tipoRDOSelect.innerHTML = '<option value="novo">Criar Novo (Emergência)</option>';
                     if (agendamentosPendentes.length > 0) {
