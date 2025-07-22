@@ -1,1198 +1,849 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Manutenção da Secretaria</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <title>Sistema de Manutenção CSL - SEMCAS</title>
     <style>
+        /* CSS Consolidado AQUI */
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #0056b3;
+            --background-color: #f4f4f4;
+            --container-bg-color: #fff;
+            --border-color: #ddd;
+            --urgent-color: #dc3545; /* Cor para urgência */
+            --urgent-bg: #f8d7da; /* Fundo para urgência */
+            --urgent-border: #f5c6cb; /* Borda para urgência */
+        }
+
         body {
-            background-color: #f8f9fa;
-            font-family: 'Inter', sans-serif;
-        }
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-       .card {
-            background-color: #ffffff;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        }
-       .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-        }
-        .loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #3498db;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: auto;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        /* Estilos para as Abas */
-        .tab-button {
-            padding: 10px 20px;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            color: #475569;
-            white-space: nowrap; /* Evita quebra de linha em botões longos */
-        }
-        .tab-button.active {
-            color: #2563eb;
-            border-bottom-color: #2563eb;
-        }
-        /* Estilo para gráficos */
-        .chart-container {
-            position: relative;
-            width: 100%;
-            /* Removido max-width e height fixos para maior adaptabilidade */
-            margin-left: auto;
-            margin-right: auto;
-            min-height: 250px; /* Garante uma altura mínima para o gráfico */
+            font-family: Arial, sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 10px;
             display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--container-bg-color);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 900px;
+            box-sizing: border-box;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .logo {
+            max-width: 100px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-size: 20px;
+            margin-bottom: 5px;
+            color: var(--secondary-color);
+        }
+
+        p {
+            font-size: 13px;
+            line-height: 1.4;
+            color: #666;
+        }
+
+        /* Estilos das Abas */
+        #tabs {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tab-button {
+            background-color: transparent;
+            border: none;
+            padding: 10px 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #666;
+            transition: color 0.3s, border-bottom 0.3s;
+            position: relative;
+        }
+
+        .tab-button.active {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Estilos do Formulário (Novo RDO) */
+        fieldset {
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        legend {
+            font-weight: bold;
+            color: var(--primary-color);
+            padding: 0 8px;
+            font-size: 14px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="number"],
+        textarea,
+        select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 15px;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: background-color 0.3s ease;
+            margin-top: 8px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .equipe-item {
+            border: 1px dashed var(--border-color);
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
             align-items: center;
+        }
+        @media (min-width: 600px) {
+            .equipe-item {
+                grid-template-columns: 1fr 1fr 50px auto;
+            }
+        }
+
+        .equipe-item label {
+            margin-bottom: 0;
+            display: inline-block;
+        }
+
+        .equipe-item input {
+            margin-bottom: 0;
+            width: 100%;
+        }
+
+        .removeEquipe {
+            background-color: #dc3545;
+            margin-top: 0;
+            padding: 8px 10px;
+            width: auto;
+        }
+
+        .removeEquipe:hover {
+            background-color: #c82333;
+        }
+        
+        #previewFotos {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
             justify-content: center;
         }
-        .chart-container canvas {
-            width: 100% !important;
-            height: 100% !important;
+
+        #previewFotos img {
+            max-width: 100px;
+            max-height: 100px;
+            border: 1px solid var(--border-color);
+            padding: 3px;
+            border-radius: 4px;
+            object-fit: cover;
         }
-        /* Estilo para barra de progresso */
-        .progress-bar-container {
-            width: 100%;
-            background-color: #e0e0e0;
-            border-radius: 9999px; /* full rounded */
-            height: 0.625rem; /* 10px */
-            overflow: hidden;
+        @media (min-width: 600px) {
+            #previewFotos img {
+                max-width: 150px;
+                max-height: 150px;
+            }
         }
-        .progress-bar {
-            height: 100%;
-            border-radius: 9999px; /* full rounded */
+
+        #mensagemStatus, #mensagemAgendamentoStatus {
+            margin-top: 15px;
+            padding: 8px;
+            background-color: #e9f7ef;
+            border: 1px solid #d4edda;
+            color: #155724;
+            border-radius: 4px;
+            display: none;
+            font-size: 14px;
             text-align: center;
-            color: white;
-            font-size: 0.75rem; /* 12px */
-            transition: width 0.5s ease-in-out;
         }
-        /* Estilos para linhas de fase em tabelas */
-        .phase-row {
-            background-color: #f8fafc; /* slate-50 */
-            font-size: 0.8rem;
-            color: #475569; /* slate-600 */
+
+        #mensagemStatus.error, #mensagemAgendamentoStatus.error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
         }
-        .phase-row td {
-            padding-left: 3rem; /* Indentação para fases */
-            padding-top: 0.5rem;
-            padding-bottom: 0.5rem;
+
+        /* Estilos para as novas abas */
+        .loading-text {
+            text-align: center;
+            font-style: italic;
+            color: #999;
+            padding: 20px;
         }
-        .toggle-icon {
+
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            padding: 10px;
+            background-color: #f7f7f7;
+            border-bottom: 1px solid var(--border-color);
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+        }
+        .rdo-item, .agendamento-item {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: grid;
+            gap: 10px;
+            position: relative;
             cursor: pointer;
-            transition: transform 0.2s ease-in-out;
         }
-        .toggle-icon.rotated {
-            transform: rotate(90deg);
+        .rdo-item:last-child, .agendamento-item:last-child {
+            border-bottom: none;
+        }
+        .rdo-item:hover, .agendamento-item:hover {
+            background-color: #f9f9f9;
+        }
+        .rdo-item .data, .agendamento-item .data {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .rdo-item .unidade, .agendamento-item .unidade {
+            color: #555;
+            font-size: 14px;
+        }
+        .rdo-item .acoes, .agendamento-item .acoes {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 5px;
+        }
+        .rdo-item .acoes button, .agendamento-item .acoes button {
+            width: auto;
+            margin: 0;
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+        
+        /* Layout de grid para os itens da lista em telas maiores */
+        @media (min-width: 768px) {
+            .rdo-item {
+                grid-template-columns: 0.5fr 1fr 2fr 1fr; /* Número RDO, Data, Unidade, Ações */
+            }
+            .rdo-item .acoes {
+                position: static;
+                transform: none;
+            }
+            .agendamento-item {
+                grid-template-columns: 0.5fr 1.5fr 2fr 1fr 1fr; /* Número, Data, Unidade, Descrição, Status, Ações */
+            }
+            .agendamento-item .acoes {
+                position: static;
+                transform: none;
+            }
+        }
+
+        /* Estilo para Agendamentos de Urgência */
+        .agendamento-item.urgencia {
+            background-color: var(--urgent-bg);
+            border-left: 5px solid var(--urgent-color);
+            font-weight: bold;
+        }
+        .agendamento-item.urgencia .data,
+        .agendamento-item.urgencia .unidade,
+        .agendamento-item.urgencia .descricao,
+        .agendamento-item.urgencia .status {
+            color: var(--urgent-color);
+        }
+
+        /* Notificação de Urgência */
+        #urgencyNotification {
+            background-color: var(--urgent-bg);
+            border: 1px solid var(--urgent-border);
+            color: var(--urgent-color);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+            display: none; /* Escondido por padrão */
+        }
+
+        /* Modal para visualização de fotos */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.8); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain; /* Ensure image fits */
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .close-modal:hover,
+        .close-modal:focus {
+            color: #bbb;
+            text-decoration: none;
+            cursor: pointer;
         }
     </style>
 </head>
-<body class="antialiased text-slate-700">
-    <div class="container mx-auto p-4 sm:p-6 md:p-8">
-        
-        <header class="mb-4">
-            <h1 class="text-3xl md:text-4xl font-bold text-slate-800">Painel de Manutenção</h1>
-            <p class="text-slate-500 mt-1">Gerenciamento de serviços e estoque da secretaria.</p>
-            <p id="last-update-time" class="text-sm text-slate-400 mt-2"></p>
+<body>
+    <div class="container">
+        <header>
+            <img src="https://www.saoluis.ma.gov.br/img/logo_mobile.png?1738946184" alt="Logo SEMCAS" class="logo">
+            <h1>Sistema de Manutenção CSL - SEMCAS</h1>
+            <p>PREFEITURA MUNICIPAL DE SÃO LUÍS</p>
+            <p>SECRETARIA MUNICIPAL DA CRIANÇA E ASSISTÊNCIA SOCIAL - SEMCAS</p>
+            <p>COORDENAÇÃO DE SUPORTE TRANSPORTE E LOGÍSTICA - CSL</p>
         </header>
 
-        <!-- ABAS DE NAVEGAÇÃO -->
-        <nav class="border-b border-slate-200 mb-8">
-            <div class="flex flex-wrap gap-2">
-                <button id="tab-visao-geral" class="tab-button active">Visão Geral</button>
-                <button id="tab-reformas" class="tab-button">Reformas</button>
-                <button id="tab-manutencao-geral" class="tab-button">Manutenção Geral</button>
-                <button id="tab-ar-condicionado" class="tab-button">Manutenção de Ar Condicionado</button>
-                <button id="tab-bebedouro" class="tab-button">Troca de Filtro de Bebedouro</button>
-                <button id="tab-estoque-materiais" class="tab-button">Estoque de Materiais</button>
-                <button id="tab-ferramentas" class="tab-button">Ferramentas de Trabalho</button>
-                <button id="tab-ordem-servico" class="tab-button">Ordem de Serviço</button>
-            </div>
-        </nav>
+        <div id="tabs">
+            <button class="tab-button active" onclick="showTab('tabNovoRDO')">Novo RDO</button>
+            <button class="tab-button" onclick="showTab('tabRDOsConcluidos')">RDOs Concluídos</button>
+            <button class="tab-button" onclick="showTab('tabAgendamentos')">Agendamentos</button>
+        </div>
 
-        <!-- Conteúdo das Abas -->
-        <div id="content-area">
-            <!-- Conteúdo da aba de Visão Geral -->
-            <div id="content-visao-geral" class="tab-content">
-                <h2 class="text-2xl font-bold text-slate-800 mb-4">Resumo Geral de Manutenção</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="visao-geral-summary-cards">
-                    <!-- Cartões de resumo geral serão inseridos aqui -->
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="card p-4">
-                        <h3 class="text-xl font-bold text-slate-700 mb-4">Status de Todos os Projetos/Serviços</h3>
-                        <div class="chart-container">
-                            <canvas id="overallStatusChart"></canvas>
-                            <p id="overallStatusChartNoData" class="hidden text-center text-slate-500 py-4">Sem dados para o gráfico.</p>
+        <div id="tabNovoRDO" class="tab-content active">
+            <h2>Novo Relatório Diário de Obras</h2>
+            <form id="laudoForm">
+                <fieldset>
+                    <legend>Opções de RDO</legend>
+                    <label for="tipoRDO">Tipo de RDO:</label>
+                    <select id="tipoRDO" name="tipoRDO">
+                        <option value="novo">Criar Novo (Emergência)</option>
+                    </select>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Dados Gerais</legend>
+                    <label for="data">Data:</label>
+                    <input type="date" id="data" name="data" required>
+
+                    <label for="unidade">Nome da Unidade:</label>
+                    <input type="text" id="unidade" name="unidade" placeholder="Ex: Creche Modelo" required>
+                    
+                    <label for="fiscal">Fiscal:</label>
+                    <input type="text" id="fiscal" name="fiscal" value="Cleyton Jorge Dias" required>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Mão de Obra</legend>
+                    <div id="equipeContainer">
+                        <div class="equipe-item">
+                            <label for="nome1">Nome:</label>
+                            <input type="text" id="nome1" name="nomeEquipe[]" placeholder="Nome Completo">
+                            <label for="funcao1">Função / Cargo:</label>
+                            <input type="text" id="funcao1" name="funcaoEquipe[]" placeholder="Ex: Técnico de Manutenção">
+                            <label for="qtd1">Qtd:</label>
+                            <input type="number" id="qtd1" name="qtdEquipe[]" value="1" min="1">
+                            <button type="button" class="removeEquipe">Remover</button>
                         </div>
                     </div>
-                    <div class="card p-4">
-                        <h3 class="text-xl font-bold text-slate-700 mb-4">Materiais Críticos no Estoque</h3>
-                        <div class="chart-container">
-                            <canvas id="criticalStockChart"></canvas>
-                            <p id="criticalStockChartNoData" class="hidden text-center text-slate-500 py-4">Sem dados para o gráfico.</p>
-                        </div>
-                        <p id="criticalStockChartNote" class="text-sm text-slate-500 mt-2 hidden text-center">Exibindo os 10 itens mais críticos. Veja a aba "Estoque de Materiais" para a lista completa.</p>
-                    </div>
-                </div>
-            </div>
+                    <button type="button" id="addEquipe">Adicionar Mais Mão de Obra</button>
+                </fieldset>
 
-            <!-- Conteúdo da aba de Reformas -->
-            <div id="content-reformas" class="tab-content hidden">
-                <h2 class="text-2xl font-bold text-slate-800 mb-4">Visão Geral de Reformas</h2>
-                
-                <section id="reformas-summary-section" class="mb-8">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="reformas-summary-cards">
-                        <!-- Cartões de resumo de reformas serão inseridos aqui -->
-                    </div>
-                </section>
+                <fieldset>
+                    <legend>Tarefas Realizadas</legend>
+                    <textarea id="tarefas" name="tarefasRealizadas" rows="5" placeholder="Descreva as tarefas realizadas..."></textarea>
+                </fieldset>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    <div class="lg:col-span-1 card p-4">
-                        <h3 class="text-xl font-bold text-slate-700 mb-4">Status dos Projetos</h3>
-                        <div class="chart-container">
-                            <canvas id="reformasStatusChart"></canvas>
-                            <p id="reformasStatusChartNoData" class="hidden text-center text-slate-500 py-4">Sem dados para o gráfico.</p>
-                        </div>
-                    </div>
-                    <div class:col-span-2 card p-6">
-                        <h3 class="text-xl font-bold text-slate-700 mb-4">Projetos de Reformas Detalhados</h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left text-slate-500">
-                                <thead class="text-xs text-slate-700 uppercase bg-slate-100">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3">Projeto</th>
-                                        <th scope="col" class="px-6 py-3">Unidade</th>
-                                        <th scope="col" class="px-6 py-3">Tipo de Reforma</th>
-                                        <th scope="col" class="px-6 py-3">Início</th>
-                                        <th scope="col" class="px-6 py-3">Fim Previsto</th>
-                                        <th scope="col" class="px-6 py-3">Status</th>
-                                        <th scope="col" class="px-6 py-3">Progresso</th>
-                                        <th scope="col" class="px-6 py-3">Responsável</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="reformas-table-body">
-                                    <!-- Dados das reformas serão renderizados aqui pelo JS -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                <fieldset>
+                    <legend>Ocorrências</legend>
+                    <textarea id="ocorrencias" name="ocorrencias" rows="3" placeholder="Registre quaisquer ocorrências ou observações..."></textarea>
+                </fieldset>
 
-            <!-- Conteúdo da aba de Manutenção Geral -->
-            <div id="content-manutencao-geral" class="tab-content hidden">
-                <h2 class="text-2xl font-bold text-slate-800 mb-4">Manutenção Geral (Lâmpadas, Elétrica, Bombas, Móveis)</h2>
-                <div class="card p-6">
-                    <p class="text-slate-600">Acompanhe os serviços de manutenção geral solicitados e concluídos.</p>
-                    <table class="w-full text-sm text-left text-slate-500 mt-4">
-                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
-                            <tr>
-                                <th scope="col" class="px-6 py-3">Local</th>
-                                <th scope="col" class="px-6 py-3">Tipo de Serviço</th>
-                                <th scope="col" class="px-6 py-3">Descrição Breve</th>
-                                <th scope="col" class="px-6 py-3">Data Solicitação</th>
-                                <th scope="col" class="px-6 py-3">Status</th>
-                                <th scope="col" class="px-6 py-3">Responsável</th>
-                            </tr>
-                        </thead>
-                        <tbody id="manutencao-geral-table-body">
-                            <!-- Dados de manutenção geral serão renderizados aqui pelo JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                <fieldset>
+                    <legend>Fotos da Manutenção</legend>
+                    <input type="file" id="fotos" name="fotos[]" accept="image/*" multiple capture="camera">
+                    <div id="previewFotos"></div>
+                </fieldset>
 
-            <!-- Conteúdo da aba de Manutenção de Ar Condicionado -->
-            <div id="content-ar-condicionado" class="tab-content hidden">
-                <h2 class="text-2xl font-bold text-slate-800 mb-4">Manutenção de Ar Condicionado</h2>
-                <div class="card p-6">
-                    <p class="text-slate-600">Acompanhe as manutenções preventivas e corretivas dos aparelhos de ar condicionado.</p>
-                    <table class="w-full text-sm text-left text-slate-500 mt-4">
-                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
-                            <tr>
-                                <th scope="col" class="px-6 py-3">Local</th>
-                                <th scope="col" class="px-6 py-3">Última Manutenção</th>
-                                <th scope="col" class="px-6 py-3">Próxima Manutenção</th>
-                                <th scope="col" class="px-6 py-3">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="bg-white border-b hover:bg-slate-50">
-                                <td class="px-6 py-4">Sala da Direção</td>
-                                <td class="px-6 py-4">10/06/2025</td>
-                                <td class="px-6 py-4">10/09/2025</td>
-                                <td class="px-6 py-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">OK</span></td>
-                            </tr>
-                            <tr class="bg-white border-b hover:bg-slate-50">
-                                <td class="px-6 py-4">Recepção Principal</td>
-                                <td class="px-6 py-4">05/05/2025</td>
-                                <td class="px-6 py-4">05/08/2025</td>
-                                <td class="px-6 py-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Aguardando</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                <button type="submit">Gerar Laudo e Salvar</button>
+                <p id="mensagemStatus"></p>
+            </form>
+        </div>
 
-            <!-- Conteúdo da aba de Troca de Filtro de Bebedouro -->
-            <div id="content-bebedouro" class="tab-content hidden">
-                <h2 class="text-2xl font-bold text-slate-800 mb-4">Troca de Filtro de Bebedouro</h2>
-                <div class="card p-6">
-                    <p class="text-slate-600">Registro das trocas de filtro dos bebedouros da secretaria.</p>
-                    <table class="w-full text-sm text-left text-slate-500 mt-4">
-                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
-                            <tr>
-                                <th scope="col" class="px-6 py-3">Local do Bebedouro</th>
-                                <th scope="col" class="px-6 py-3">Última Troca</th>
-                                <th scope="col" class="px-6 py-3">Próxima Troca (Estimada)</th>
-                                <th scope="col" class="px-6 py-3">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="bg-white border-b hover:bg-slate-50">
-                                <td class="px-6 py-4">Copa - Térreo</td>
-                                <td class="px-6 py-4">20/06/2025</td>
-                                <td class="px-6 py-4">20/09/2025</td>
-                                <td class="px-6 py-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Em dia</span></td>
-                            </tr>
-                            <tr class="bg-white border-b hover:bg-slate-50">
-                                <td class="px-6 py-4">Corredor 2º Andar</td>
-                                <td class="px-6 py-4">10/03/2025</td>
-                                <td class="px-6 py-4">10/06/2025</td>
-                                <td class="px-6 py-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Atrasado</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Conteúdo da aba de Estoque de Materiais -->
-            <div id="content-estoque-materiais" class="tab-content hidden">
-                <h2 class="text-2xl font-bold text-slate-800 mb-4">Estoque de Materiais de Manutenção</h2>
-                <div class="card p-6">
-                    <p class="text-slate-600">Visualize o estoque atual de materiais. (Sem valores monetários)</p>
-                    <div class="chart-container mb-4">
-                        <h3 class="text-xl font-bold text-slate-700 mb-2">Itens de Estoque para Reposição</h3>
-                        <canvas id="estoqueStatusChart"></canvas>
-                        <p id="estoqueStatusChartNoData" class="hidden text-center text-slate-500 py-4">Nenhum item abaixo do nível mínimo.</p>
-                    </div>
-                    <table class="w-full text-sm text-left text-slate-500 mt-4">
-                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
-                            <tr>
-                                <th scope="col" class="px-6 py-3">Material</th>
-                                <th scope="col" class="px-6 py-3">Unidade de Medida</th>
-                                <th scope="col" class="px-6 py-3">Quantidade em Estoque</th>
-                                <th scope="col" class="px-6 py-3">Nível Mínimo</th>
-                                <th scope="col" class="px-6 py-3">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="estoque-materiais-body">
-                            <!-- Dados do estoque serão renderizados aqui pelo JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Conteúdo da aba de Ferramentas de Trabalho -->
-            <div id="content-ferramentas" class="tab-content hidden">
-                <h2 class="text-2xl font-bold text-slate-800 mb-4">Ferramentas de Trabalho</h2>
-                <div class="card p-6">
-                    <p class="text-slate-600">Inventário das ferramentas disponíveis para a equipe de manutenção.</p>
-                    <table class="w-full text-sm text-left text-slate-500 mt-4">
-                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
-                            <tr>
-                                <th scope="col" class="px-6 py-3">Nome da Ferramenta</th>
-                                <th scope="col" class="px-6 py-3">Quantidade</th>
-                                <th scope="col" class="px-6 py-3">Localização</th>
-                                <th scope="col" class="px-6 py-3">Status</th>
-                                <th scope="col" class="px-6 py-3">Responsável (se em uso)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ferramentas-table-body">
-                            <!-- Dados das ferramentas serão renderizados aqui pelo JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Conteúdo da aba de Ordem de Serviço -->
-            <div id="content-ordem-servico" class="tab-content hidden">
-                <h2 class="text-2xl font-bold text-slate-800 mb-4">Registro de Ordem de Serviço</h2>
-                <div class="card p-6">
-                    <p class="text-slate-600 mb-4">Preencha o formulário abaixo para registrar uma nova ordem de serviço.</p>
-                    <form id="os-form" class="space-y-4">
-                        <div>
-                            <label for="os-solicitante" class="block text-sm font-medium text-slate-600 mb-1">Solicitante</label>
-                            <input type="text" id="os-solicitante" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Nome do Solicitante" required>
-                        </div>
-                        <div>
-                            <label for="os-local" class="block text-sm font-medium text-slate-600 mb-1">Local da Solicitação</label>
-                            <input type="text" id="os-local" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: Sala 101, Recepção" required>
-                        </div>
-                        <div>
-                            <label for="os-tipo-servico" class="block text-sm font-medium text-slate-600 mb-1">Tipo de Serviço</label>
-                            <select id="os-tipo-servico" class="w-full p-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
-                                <option value="">Selecione...</option>
-                                <option value="reforma_pequena">Reforma Pequena</option>
-                                <option value="reforma_unidade">Reforma de Unidade</option>
-                                <option value="ar_condicionado">Manutenção de Ar Condicionado</option>
-                                <option value="bebedouro">Troca de Filtro de Bebedouro</option>
-                                <option value="troca_lampada">Troca de Lâmpada</option>
-                                <option value="fios_eletricos">Fiação Elétrica</option>
-                                <option value="bomba_agua">Bomba D'água</option>
-                                <option value="reforma_moveis">Reforma de Móveis</option>
-                                <option value="outros">Outros</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="os-descricao" class="block text-sm font-medium text-slate-600 mb-1">Descrição do Problema</label>
-                            <textarea id="os-descricao" rows="4" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Descreva detalhadamente o problema ou solicitação." required></textarea>
-                        </div>
-                        <button type="submit" class="w-full p-3 bg-blue-600 text-white font-semibold rounded-lg text-base hover:bg-blue-700 transition-colors">Registrar Ordem de Serviço</button>
-                    </form>
-                    <div id="os-message" class="mt-4 p-3 rounded-lg text-center hidden"></div>
-                </div>
+        <div id="tabRDOsConcluidos" class="tab-content">
+            <h2>Relatórios de Obras Concluídos</h2>
+            <div id="listaRdos" class="list-container">
+                <p class="loading-text">Carregando relatórios...</p>
             </div>
         </div>
-        
-        <footer class="text-center mt-8 text-sm text-gray-500">
-            <p>Painel desenvolvido por: Jurandy & Colaboradores</p>
-        </footer>
 
+        <div id="tabAgendamentos" class="tab-content">
+            <h2>Agendamentos de Manutenção</h2>
+            <div id="urgencyNotification">
+                <p>⚠️ **ATENÇÃO:** Existem agendamentos com status de **Urgência**!</p>
+            </div>
+            <div id="agendamentoFormContainer">
+                <form id="agendamentoForm">
+                    <fieldset>
+                        <legend>Novo Agendamento</legend>
+                        <label for="agendamento-unidade">Nome da Unidade:</label>
+                        <input type="text" id="agendamento-unidade" name="agendamentoUnidade" placeholder="Ex: Creche Modelo" required>
+                        
+                        <label for="agendamento-data">Data Agendada:</label>
+                        <input type="date" id="agendamento-data" name="agendamentoData" required>
+
+                        <label for="agendamento-descricao">Descrição do Serviço:</label>
+                        <textarea id="agendamento-descricao" name="agendamentoDescricao" rows="3" required></textarea>
+
+                        <label for="agendamento-status">Status:</label>
+                        <select id="agendamento-status" name="agendamentoStatus">
+                            <option value="Normal">Normal</option>
+                            <option value="Urgencia">Urgência</option>
+                        </select>
+                    </fieldset>
+                    <button type="submit">Salvar Agendamento</button>
+                    <p id="mensagemAgendamentoStatus"></p>
+                </form>
+            </div>
+            <hr>
+            <h3>Lista de Agendamentos</h3>
+            <div id="listaAgendamentos" class="list-container">
+                <p class="loading-text">Carregando agendamentos...</p>
+            </div>
+        </div>
     </div>
 
-    <script type="text/javascript">
-        // --- URLs de Conexão com Google Apps Script (APIs) ---
-        // ATENÇÃO: Substitua estas URLs pelas URLs de implantação dos seus próprios scripts Apps Script.
-        // Cada URL abaixo representaria um Apps Script que lê uma planilha específica e retorna JSON.
-        // Para o registro de OS, a URL abaixo é a que você implantará com o script doPost.
-        const googleSheetReformasApiUrl = 'https://script.google.com/macros/s/SUA_URL_APPS_SCRIPT_REFORMAS/exec'; // Exemplo
-        const googleSheetManutencaoGeralApiUrl = 'https://script.google.com/macros/s/SUA_URL_APPS_SCRIPT_MANUTENCAO_GERAL/exec'; // Exemplo
-        const googleSheetEstoqueMateriaisApiUrl = 'https://script.google.com/macros/s/SUA_URL_APPS_SCRIPT_ESTOQUE_MATERIAIS/exec'; // Exemplo
-        const googleSheetFerramentasApiUrl = 'https://script.google.com/macros/s/SUA_URL_APPS_SCRIPT_FERRAMENTAS/exec'; // Exemplo
-        const googleSheetOrdemServicoPostUrl = 'https://script.google.com/macros/s/AKfycbypxSVE9syiII4H4DumAfxWEgFm1AE7qLpuQgqHTNLMi4B7I8dWF0Het7V2Cd4_aL58Mg/exec'; // ESTA É A URL REAL DO SEU SCRIPT DE POST DE OS
+    <!-- Modal para visualização de fotos -->
+    <div id="photoModal" class="modal">
+        <span class="close-modal">&times;</span>
+        <div id="modalContent" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;"></div>
+    </div>
+    
+    <script>
+        // JavaScript Consolidado AQUI
+        document.addEventListener('DOMContentLoaded', () => {
+            const laudoForm = document.getElementById('laudoForm');
+            const equipeContainer = document.getElementById('equipeContainer');
+            const addEquipeBtn = document.getElementById('addEquipe');
+            const fotosInput = document.getElementById('fotos');
+            const previewFotosDiv = document.getElementById('previewFotos');
+            const mensagemStatus = document.getElementById('mensagemStatus');
+            const tipoRDOSelect = document.getElementById('tipoRDO');
 
-        // --- Variáveis e Dados de Exemplo (Serão substituídos por dados reais das APIs) ---
-        let currentActiveTab = 'visao-geral'; // Aba ativa inicialmente
-        let reformasStatusChartInstance; // Instância do Chart.js para reformas
-        let reformasTypeChartInstance; // Instância do Chart.js para tipos de reforma
-        let estoqueStatusChartInstance; // Instância do Chart.js para estoque
-        let overallStatusChartInstance; // Instância do Chart.js para status geral
-        let criticalStockChartInstance; // Instância do Chart.js para estoque crítico
-
-        // Dados de exemplo (MOCK DATA) - Em um cenário real, seriam carregados das planilhas via Apps Script.
-        // Manterei o mock data para que o painel funcione imediatamente sem as APIs configuradas.
-        const mockEstoqueMateriais = [
-            { material: 'Lâmpada LED (9W)', unidade: 'unidade', quantidade: 50, minimo: 10, status: 'OK' },
-            { material: 'Filtro Bebedouro (modelo X)', unidade: 'unidade', quantidade: 5, minimo: 3, status: 'OK' },
-            { material: 'Cabo de Rede (Cat6)', unidade: 'metro', quantidade: 100, minimo: 20, status: 'OK' },
-            { material: 'Tinta Acrílica (Branca)', unidade: 'litro', quantidade: 8, minimo: 10, status: 'Abaixo do Mínimo' },
-            { material: 'Parafusos Diversos', unidade: 'caixa', quantidade: 2, minimo: 5, status: 'Abaixo do Mínimo' },
-            { material: 'Gás Refrigerante (R410a)', unidade: 'kg', quantidade: 3, minimo: 2, status: 'OK' },
-            { material: 'Disjuntor (20A)', unidade: 'unidade', quantidade: 1, minimo: 5, status: 'Crítico' },
-            { material: 'Fita Isolante', unidade: 'rolo', quantidade: 7, minimo: 10, status: 'Abaixo do Mínimo' }
-        ];
-
-        const mockReformasData = [
-            { id: 1, projeto: 'Reforma Sala de Reuniões', unidade: 'Secretaria Central', tipo: 'Pintura/Elétrica', dataInicio: '01/07/2025', dataFimPrevista: '30/07/2025', status: 'Em Andamento', progresso: 80, responsavel: 'Equipe A', typeReforma: 'Pequena' },
-            { id: 2, projeto: 'Pintura Hall de Entrada', unidade: 'Secretaria Central', tipo: 'Pintura', dataInicio: '15/07/2025', dataFimPrevista: '20/07/2025', status: 'Pendente', progresso: 0, responsavel: 'Equipe B', typeReforma: 'Pequena' },
-            { id: 3, projeto: 'Reparo Telhado Anexo', unidade: 'Anexo Administrativo', tipo: 'Alvenaria', dataInicio: '20/06/2025', dataFimPrevista: '28/06/2025', status: 'Concluído', progresso: 100, responsavel: 'Equipe C', typeReforma: 'Pequena' },
-            { id: 4, projeto: 'Reforma Unidade CRAS Centro', unidade: 'CRAS Centro', tipo: 'Geral', dataInicio: '01/07/2025', dataFimPrevista: '30/09/2025', status: 'Em Andamento', responsavel: 'Equipe A', typeReforma: 'Unidade',
-                phases: [
-                    { name: 'Demolição', progresso: 100, status: 'Concluído' },
-                    { name: 'Alvenaria', progresso: 70, status: 'Em Andamento' },
-                    { name: 'Elétrica', progresso: 30, status: 'Em Andamento' },
-                    { name: 'Pintura', progresso: 0, status: 'Pendente' },
-                    { name: 'Acabamento', progresso: 0, status: 'Pendente' }
-                ]
-            },
-            { id: 5, projeto: 'Troca de Pisos Cozinha', unidade: 'Secretaria Central', tipo: 'Piso', dataInicio: '01/08/2025', dataFimPrevista: '10/08/2025', status: 'Pendente', progresso: 0, responsavel: 'Equipe B', typeReforma: 'Pequena' },
-            { id: 6, projeto: 'Manutenção Hidráulica Banheiros', unidade: 'Anexo Administrativo', tipo: 'Hidráulica', dataInicio: '01/06/2025', dataFimPrevista: '05/06/2025', status: 'Concluído', progresso: 100, responsavel: 'Equipe C', typeReforma: 'Pequena' },
-            { id: 7, projeto: 'Reforma Unidade CREAS Leste', unidade: 'CREAS Leste', tipo: 'Geral', dataInicio: '10/06/2025', dataFimPrevista: '10/09/2025', status: 'Concluído', responsavel: 'Equipe D', typeReforma: 'Unidade',
-                phases: [
-                    { name: 'Demolição', progresso: 100, status: 'Concluído' },
-                    { name: 'Alvenaria', progresso: 100, status: 'Concluído' },
-                    { name: 'Elétrica', progresso: 100, status: 'Concluído' },
-                    { name: 'Pintura', progresso: 100, status: 'Concluído' }
-                ]
-            }
-        ];
-
-        const mockManutencaoGeralData = [
-            { id: 101, local: 'Sala 101', tipoServico: 'Troca de Lâmpada', descricaoBreve: 'Lâmpada queimada no teto', dataSolicitacao: '01/07/2025', status: 'Pendente', responsavel: 'Equipe A' },
-            { id: 102, local: 'Recepção', tipoServico: 'Fiação Elétrica', descricaoBreve: 'Tomada com mau contato', dataSolicitacao: '02/07/2025', status: 'Em Andamento', responsavel: 'Equipe B' },
-            { id: 103, local: 'Jardim', tipoServico: 'Bomba D\'água', descricaoBreve: 'Bomba não liga', dataSolicitacao: '28/06/2025', status: 'Concluído', responsavel: 'Equipe C' },
-            { id: 104, local: 'Sala de Espera', tipoServico: 'Reforma de Móveis', descricaoBreve: 'Cadeira com encosto quebrado', dataSolicitacao: '03/07/2025', status: 'Pendente', responsavel: 'Equipe A' },
-            { id: 105, local: 'Corredor 3º Andar', tipoServico: 'Troca de Lâmpada', descricaoBreve: 'Lâmpada piscando', dataSolicitacao: '04/07/2025', status: 'Pendente', responsavel: 'Equipe A' }
-        ];
-
-        const mockFerramentasData = [
-            { nome: 'Furadeira de Impacto', quantidade: 2, localizacao: 'Almoxarifado', status: 'Disponível', responsavel: 'N/A' },
-            { nome: 'Caixa de Ferramentas (Básica)', quantidade: 5, localizacao: 'Almoxarifado', status: 'Disponível', responsavel: 'N/A' },
-            { nome: 'Multímetro Digital', quantidade: 3, localizacao: 'Almoxarifado', status: 'Em Uso', responsavel: 'João' },
-            { nome: 'Escada Articulada (5m)', quantidade: 1, localizacao: 'Depósito', status: 'Em Manutenção', responsavel: 'N/A' },
-            { nome: 'Chave de Fenda (conjunto)', quantidade: 10, localizacao: 'Almoxarifado', status: 'Disponível', responsavel: 'N/A' }
-        ];
-
-
-        // --- Funções de Utilitário ---
-
-        /**
-         * Calcula o progresso geral de uma reforma de unidade com base no progresso de suas fases.
-         * @param {Array<Object>} phases - Array de objetos de fases, cada um com uma propriedade 'progresso'.
-         * @returns {number} O progresso médio arredondado das fases.
-         */
-        function calculateOverallProgress(phases) {
-            if (!phases || phases.length === 0) return 0;
-            const totalProgress = phases.reduce((sum, phase) => sum + phase.progresso, 0);
-            return Math.round(totalProgress / phases.length);
-        }
-
-        /**
-         * Atualiza o horário da última atualização no cabeçalho.
-         */
-        function updateLastUpdateTime() {
-            const now = new Date();
-            const formattedDate = now.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-            const updateEl = document.getElementById('last-update-time');
-            if (updateEl) {
-                updateEl.textContent = `Dados atualizados em: ${formattedDate}`;
-            }
-        }
-
-        /**
-         * Função genérica para buscar dados de uma API (Google Apps Script) ou CSV.
-         * Adapta-se ao tipo de URL para parsear JSON ou CSV.
-         * @param {string} apiUrl - A URL da API (Apps Script) ou CSV.
-         * @returns {Promise<Array<Object>>} Uma promessa que resolve para um array de objetos.
-         */
-        async function fetchDataFromApi(apiUrl) {
-            if (!apiUrl || apiUrl.includes('SUA_URL_APPS_SCRIPT_')) { // Verifica se é uma URL de exemplo não configurada
-                console.warn(`URL da API não configurada ou é um placeholder: ${apiUrl}. Retornando mock data.`);
-                // Retorna mock data baseado na URL simulada para que o painel funcione
-                if (apiUrl.includes('REFORMAS')) return mockReformasData;
-                if (apiUrl.includes('MANUTENCAO_GERAL')) return mockManutencaoGeralData;
-                if (apiUrl.includes('ESTOQUE_MATERIAIS')) return mockEstoqueMateriais;
-                if (apiUrl.includes('FERRAMENTAS')) return mockFerramentasData;
-                return [];
-            }
-
-            try {
-                const response = await fetch(apiUrl);
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Falha ao carregar dados da URL: ${apiUrl}. Resposta: ${errorText}`);
-                }
-
-                // Se a URL for do Apps Script (termina com /exec), espera JSON
-                if (apiUrl.includes('script.google.com/macros/s/') && apiUrl.endsWith('/exec')) {
-                    const data = await response.json();
-                    if (data && data.error) {
-                        throw new Error(`Erro do Apps Script: ${data.error}`);
-                    }
-                    return data; // Já é um array de objetos JSON
-                } else {
-                    // Caso contrário (ex: ?output=csv), assume que é CSV
-                    const csvText = await response.text(); // Lê como texto diretamente
-                    return parseCsvData(csvText); // Reutiliza a função de parsing CSV
-                }
-            } catch (error) {
-                console.error("Erro ao buscar dados da API:", error);
-                return []; // Retorna array vazio em caso de erro
-            }
-        }
-
-        /**
-         * Parseia uma string CSV em um array de objetos.
-         * Detecta automaticamente o delimitador (vírgula ou ponto e vírgula).
-         * Lida com valores entre aspas.
-         * @param {string} csvText - A string contendo os dados CSV.
-         * @returns {Array<Object>} Um array de objetos onde cada objeto representa uma linha do CSV.
-         */
-        function parseCsvData(csvText) {
-            const lines = csvText.trim().split(/\r\n|\n/);
-            if (lines.length < 2) return [];
-            const headerLine = lines[0];
-            const delimiter = headerLine.includes(';') ? ';' : ','; // Detecta delimitador
-            // Regex para dividir a linha, ignorando delimitadores dentro de aspas
-            const splitRegex = new RegExp(`${delimiter}(?=(?:(?:[^"]*"){2})*[^"]*$)`);
-            const headers = headerLine.split(delimiter).map(h => h.trim().replace(/^"|"$/g, ''));
-            const data = [];
-            for (let i = 1; i < lines.length; i++) {
-                if (lines[i].trim() === '') continue; // Ignora linhas vazias
-                const values = lines[i].split(splitRegex);
-                const item = {};
-                for (let j = 0; j < headers.length; j++) {
-                    let value = values[j] ? values[j].trim() : '';
-                    // Remove aspas extras se o valor estiver entre aspas
-                    if (value.startsWith('"') && value.endsWith('"')) {
-                        value = value.slice(1, -1);
-                    }
-                    item[headers[j]] = value;
-                }
-                data.push(item);
-            }
-            return data;
-        }
-
-        /**
-         * Renderiza a tabela de estoque de materiais e o gráfico de status de estoque.
-         */
-        async function renderEstoqueMateriais() {
-            const tbody = document.getElementById('estoque-materiais-body');
-            const estoqueStatusChartCanvas = document.getElementById('estoqueStatusChart');
-            const estoqueStatusChartNoData = document.getElementById('estoqueStatusChartNoData');
+            const agendamentoForm = document.getElementById('agendamentoForm');
+            const mensagemAgendamentoStatus = document.getElementById('mensagemAgendamentoStatus');
+            const urgencyNotification = document.getElementById('urgencyNotification');
             
-            if (!tbody || !estoqueStatusChartCanvas || !estoqueStatusChartNoData) return;
+            // ATENÇÃO: SUBSTITUA PELA URL DE IMPLANTAÇÃO DO SEU GOOGLE APPS SCRIPT
+            // Exemplo: 'https://script.google.com/macros/s/AKfycbz.../exec'
+            const GAS_WEB_APP_URL = 'SUA_URL_DO_GOOGLE_APPS_SCRIPT_AQUI'; 
 
-            const estoqueData = await fetchDataFromApi(googleSheetEstoqueMateriaisApiUrl);
+            const photoModal = document.getElementById('photoModal');
+            const modalContent = document.getElementById('modalContent');
+            const closeModal = document.querySelector('.close-modal');
 
-            let tableHTML = '';
-            estoqueData.forEach(item => {
-                let statusClass = '';
-                if (item.status === 'OK') {
-                    statusClass = 'bg-green-100 text-green-800';
-                } else if (item.status === 'Abaixo do Mínimo') {
-                    statusClass = 'bg-yellow-100 text-yellow-800';
-                } else if (item.status === 'Crítico') {
-                    statusClass = 'bg-red-100 text-red-800';
+            closeModal.onclick = function() {
+                photoModal.style.display = 'none';
+                modalContent.innerHTML = ''; // Clear images
+            }
+
+            window.onclick = function(event) {
+                if (event.target == photoModal) {
+                    photoModal.style.display = 'none';
+                    modalContent.innerHTML = ''; // Clear images
                 }
+            }
 
-                tableHTML += `
-                    <tr class="bg-white border-b hover:bg-slate-50">
-                        <td class="px-6 py-4 font-medium text-slate-900">${item.material}</td>
-                        <td class="px-6 py-4">${item.unidade}</td>
-                        <td class="px-6 py-4 text-center">${item.quantidade}</td>
-                        <td class="px-6 py-4 text-center">${item.minimo}</td>
-                        <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
-                                ${item.status}
-                            </span>
-                        </td>
-                    </tr>
+            // Lógica para navegação entre abas
+            window.showTab = async function(tabId) {
+                document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+                document.getElementById(tabId).style.display = 'block';
+                document.querySelectorAll('.tab-button').forEach(button => button.classList.remove('active'));
+                document.querySelector(`[onclick="showTab('${tabId}')"]`).classList.add('active');
+
+                // Carrega dados se for a aba de listas
+                if (tabId === 'tabNovoRDO') {
+                    await carregarAgendamentosPendentesParaRDO();
+                } else if (tabId === 'tabRDOsConcluidos') {
+                    await carregarRdosConcluidos();
+                } else if (tabId === 'tabAgendamentos') {
+                    await carregarAgendamentos();
+                }
+            };
+            
+            let equipeCount = 1;
+
+            addEquipeBtn.addEventListener('click', () => {
+                equipeCount++;
+                const newEquipeItem = document.createElement('div');
+                newEquipeItem.classList.add('equipe-item');
+                newEquipeItem.innerHTML = `
+                    <label for="nome${equipeCount}">Nome:</label>
+                    <input type="text" id="nome${equipeCount}" name="nomeEquipe[]" placeholder="Nome Completo">
+                    <label for="funcao${equipeCount}">Função / Cargo:</label>
+                    <input type="text" id="funcao${equipeCount}" name="funcaoEquipe[]" placeholder="Ex: Técnico de Manutenção">
+                    <label for="qtd${equipeCount}">Qtd:</label>
+                    <input type="number" id="qtd${equipeCount}" name="qtdEquipe[]" value="1" min="1">
+                    <button type="button" class="removeEquipe">Remover</button>
                 `;
+                equipeContainer.appendChild(newEquipeItem);
             });
-            tbody.innerHTML = tableHTML;
-
-            // --- Renderizar Gráfico de Barras de Estoque Crítico/Abaixo do Mínimo ---
-            const lowStockItems = estoqueData.filter(item => item.status === 'Abaixo do Mínimo' || item.status === 'Crítico');
-            const labels = lowStockItems.map(item => item.material);
-            const data = lowStockItems.map(item => item.quantidade);
-            const backgroundColors = lowStockItems.map(item => item.status === 'Crítico' ? '#EF4444' : '#F59E0B'); // Red for critical, Amber for low
-
-            if (estoqueStatusChartInstance) {
-                estoqueStatusChartInstance.destroy();
-            }
-
-            if (labels.length > 0) {
-                estoqueStatusChartNoData.classList.add('hidden');
-                estoqueStatusChartCanvas.classList.remove('hidden');
-                estoqueStatusChartInstance = new Chart(estoqueStatusChartCanvas, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Quantidade em Estoque',
-                            data: data,
-                            backgroundColor: backgroundColors,
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false,
-                            },
-                            title: {
-                                display: false,
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    precision: 0
-                                }
-                            }
-                        }
-                    }
-                });
-            } else {
-                estoqueStatusChartNoData.classList.remove('hidden');
-                estoqueStatusChartCanvas.classList.add('hidden');
-            }
-        }
-
-        /**
-         * Renderiza o conteúdo da aba de Reformas, incluindo gráficos e tabela.
-         */
-        async function renderReformas() {
-            const reformasTableBody = document.getElementById('reformas-table-body');
-            const reformasStatusChartCanvas = document.getElementById('reformasStatusChart');
-            const reformasStatusChartNoData = document.getElementById('reformasStatusChartNoData');
-            const reformasSummaryCards = document.getElementById('reformas-summary-cards');
-
-            if (!reformasTableBody || !reformasStatusChartCanvas || !reformasStatusChartNoData || !reformasSummaryCards) return;
-
-            const reformasData = await fetchDataFromApi(googleSheetReformasApiUrl);
-
-            // --- Renderizar Cartões de Resumo ---
-            const totalProjetos = reformasData.length;
-            const projetosEmAndamento = reformasData.filter(p => p.status === 'Em Andamento').length;
-            const projetosConcluidos = reformasData.filter(p => p.status === 'Concluído').length;
-
-            reformasSummaryCards.innerHTML = `
-                <div class="card p-5 flex items-center space-x-4">
-                    <div class="bg-blue-100 p-3 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path></svg>
-                    </div>
-                    <div>
-                        <p class="text-slate-500 text-sm">Total de Projetos</p>
-                        <p class="text-2xl font-bold text-slate-800">${totalProjetos}</p>
-                    </div>
-                </div>
-                <div class="card p-5 flex items-center space-x-4">
-                    <div class="bg-yellow-100 p-3 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-600"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                    </div>
-                    <div>
-                        <p class="text-slate-500 text-sm">Em Andamento</p>
-                        <p class="text-2xl font-bold text-slate-800">${projetosEmAndamento}</p>
-                    </div>
-                </div>
-                <div class="card p-5 flex items-center space-x-4">
-                    <div class="bg-green-100 p-3 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    </div>
-                    <div>
-                        <p class="text-slate-500 text-sm">Concluídos</p>
-                        <p class="text-2xl font-bold text-slate-800">${projetosConcluidos}</p>
-                    </div>
-                </div>
-            `;
-
-            // --- Renderizar Tabela de Reformas ---
-            let tableHTML = '';
-            reformasData.forEach(projeto => {
-                let statusClass = '';
-                let progressColor = 'bg-blue-400';
-                
-                // Determina a cor e classe do status
-                if (projeto.status === 'Concluído') {
-                    statusClass = 'bg-green-100 text-green-800';
-                    progressColor = 'bg-green-500';
-                } else if (projeto.status === 'Em Andamento') {
-                    statusClass = 'bg-yellow-100 text-yellow-800';
-                    progressColor = 'bg-blue-500';
-                } else if (projeto.status === 'Pendente') {
-                    statusClass = 'bg-gray-100 text-gray-800';
-                    progressColor = 'bg-gray-400';
-                } else if (projeto.status === 'Cancelado') {
-                    statusClass = 'bg-red-100 text-red-800';
-                    progressColor = 'bg-red-500';
+            equipeContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('removeEquipe')) {
+                    e.target.closest('.equipe-item').remove();
                 }
-
-                // Calcula o progresso a ser exibido
-                let displayProgress = projeto.progresso;
-                let phaseRowsHTML = '';
-                let phasesArray = []; // Initialize phasesArray
-
-                const isUnitReform = projeto.typeReforma === 'Unidade' && projeto.phases;
-
-                if (isUnitReform) {
-                    try {
-                        // Attempt to parse phases if it's a string, otherwise use directly
-                        phasesArray = typeof projeto.phases === 'string' ? JSON.parse(projeto.phases) : projeto.phases;
-                        // Ensure phasesArray is actually an array after parsing
-                        if (!Array.isArray(phasesArray)) {
-                            console.warn(`Projeto ${projeto.id} - phases não é um array válido após parsing:`, projeto.phases);
-                            phasesArray = []; // Reset if not an array
+            });
+            fotosInput.addEventListener('change', (event) => {
+                previewFotosDiv.innerHTML = '';
+                const files = event.target.files;
+                if (files) {
+                    Array.from(files).forEach(file => {
+                        if (file.type.startsWith('image/')) {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                const img = document.createElement('img');
+                                img.src = e.target.result;
+                                previewFotosDiv.appendChild(img);
+                            };
+                            reader.readAsDataURL(file);
                         }
-                    } catch (e) {
-                        console.error(`Erro ao parsear fases para o projeto ${projeto.id}:`, e, projeto.phases);
-                        phasesArray = []; // Default to empty array on parse error
+                    });
+                }
+            });
+
+            tipoRDOSelect.addEventListener('change', async (event) => {
+                const selectedRdoNum = event.target.value;
+                if (selectedRdoNum === 'novo') {
+                    laudoForm.reset();
+                    previewFotosDiv.innerHTML = '';
+                    document.getElementById('fiscal').value = 'Cleyton Jorge Dias';
+                } else {
+                    try {
+                        const response = await fetch(`${GAS_WEB_APP_URL}?action=getAgendamentoDetails&rdoNum=${selectedRdoNum}`);
+                        const agendamento = await response.json();
+
+                        if (agendamento && agendamento.unidade) {
+                            document.getElementById('unidade').value = agendamento.unidade;
+                            document.getElementById('tarefas').value = agendamento.descricao || '';
+                        } else {
+                            alert('Agendamento não encontrado ou dados incompletos.');
+                            laudoForm.reset();
+                            previewFotosDiv.innerHTML = '';
+                            document.getElementById('fiscal').value = 'Cleyton Jorge Dias';
+                        }
+                    } catch (error) {
+                        console.error('Erro ao buscar detalhes do agendamento:', error);
+                        alert('Erro ao carregar detalhes do agendamento. Tente novamente.');
+                        laudoForm.reset();
+                        previewFotosDiv.innerHTML = '';
+                        document.getElementById('fiscal').value = 'Cleyton Jorge Dias';
                     }
+                }
+            });
 
-                    if (phasesArray.length > 0) {
-                        displayProgress = calculateOverallProgress(phasesArray);
-                        
-                        phasesArray.forEach(phase => {
-                            let phaseProgressColor = 'bg-blue-300';
-                            if (phase.status === 'Concluído') phaseProgressColor = 'bg-green-400';
-                            else if (phase.status === 'Pendente') phaseProgressColor = 'bg-gray-300';
+            laudoForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                mensagemStatus.style.display = 'none';
+                mensagemStatus.classList.remove('error');
+                mensagemStatus.textContent = 'Enviando laudo...';
+                mensagemStatus.style.display = 'block';
 
-                            phaseRowsHTML += `
-                                <tr class="phase-row hidden" data-project-id="${projeto.id}">
-                                    <td colspan="2" class="px-6 py-2">Fase: ${phase.name}</td>
-                                    <td colspan="3" class="px-6 py-2">
-                                        <div class="progress-bar-container">
-                                            <div class="progress-bar ${phaseProgressColor}" style="width: ${phase.progresso}%"></div>
-                                        </div>
-                                        <span class="text-xs text-slate-500 mt-1 block">${phase.progresso}% (${phase.status})</span>
-                                    </td>
-                                    <td colspan="3"></td>
-                                </tr>
-                            `;
+                const formData = new FormData(laudoForm);
+                const data = {};
+                data.action = 'salvarRDO';
+                data.rdoAgendamentoNum = tipoRDOSelect.value === 'novo' ? '' : tipoRDOSelect.value;
+                
+                data.data = formData.get('data');
+                data.unidade = formData.get('unidade');
+                data.fiscal = formData.get('fiscal');
+                data.tarefasRealizadas = formData.get('tarefasRealizadas');
+                data.ocorrencias = formData.get('ocorrencias');
+
+                data.equipe = [];
+                const nomesEquipe = formData.getAll('nomeEquipe[]');
+                const funcoesEquipe = formData.getAll('funcaoEquipe[]');
+                const qtdsEquipe = formData.getAll('qtdEquipe[]');
+
+                for (let i = 0; i < nomesEquipe.length; i++) {
+                    if (nomesEquipe[i]) {
+                        data.equipe.push({
+                            nome: nomesEquipe[i],
+                            funcao: funcoesEquipe[i],
+                            qtd: parseInt(qtdsEquipe[i] || 1)
                         });
                     }
                 }
 
-                tableHTML += `
-                    <tr class="bg-white border-b hover:bg-slate-50" data-project-main-row="${projeto.id}">
-                        <td class="px-6 py-4 font-medium text-slate-900 flex items-center">
-                            ${isUnitReform && phasesArray.length > 0 ? `<span class="toggle-icon mr-2">&#9658;</span>` : ''} <!-- Triângulo para expandir -->
-                            ${projeto.projeto}
-                        </td>
-                        <td class="px-6 py-4">${projeto.unidade}</td>
-                        <td class="px-6 py-4">${projeto.typeReforma}</td>
-                        <td class="px-6 py-4">${projeto.dataInicio}</td>
-                        <td class="px-6 py-4">${projeto.dataFimPrevista}</td>
-                        <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
-                                ${projeto.status}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="progress-bar-container">
-                                <div class="progress-bar ${progressColor}" style="width: ${displayProgress}%"></div>
-                            </div>
-                            <span class="text-xs text-slate-500 mt-1 block">${displayProgress}%</span>
-                        </td>
-                        <td class="px-6 py-4">${projeto.responsavel}</td>
-                    </tr>
-                    ${phaseRowsHTML}
-                `;
-            });
-            reformasTableBody.innerHTML = tableHTML;
-
-            // Adiciona listeners para expandir/contrair as fases
-            reformasTableBody.querySelectorAll('.toggle-icon').forEach(icon => {
-                icon.addEventListener('click', (event) => {
-                    const projectId = event.target.closest('tr').dataset.projectMainRow;
-                    const phaseRows = reformasTableBody.querySelectorAll(`.phase-row[data-project-id="${projectId}"]`);
-                    phaseRows.forEach(row => {
-                        row.classList.toggle('hidden');
+                data.fotos = [];
+                const fotoFiles = fotosInput.files;
+                const fotoPromises = Array.from(fotoFiles).map(file => {
+                    return new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsDataURL(file);
                     });
-                    event.target.classList.toggle('rotated'); // Gira o triângulo
                 });
-            });
+                data.fotos = await Promise.all(fotoPromises);
 
-
-            // --- Renderizar Gráfico de Pizza de Status ---
-            const statusCounts = reformasData.reduce((acc, projeto) => {
-                acc[projeto.status] = (acc[projeto.status] || 0) + 1;
-                return acc;
-            }, {});
-
-            const labels = Object.keys(statusCounts);
-            const data = Object.values(statusCounts);
-            const backgroundColors = labels.map(status => {
-                if (status === 'Concluído') return '#10B981'; // green-500
-                if (status === 'Em Andamento') return '#3B82F6'; // blue-500
-                if (status === 'Pendente') return '#9CA3AF'; // gray-400
-                if (status === 'Cancelado') return '#EF4444'; // red-500
-                return '#cccccc';
-            });
-
-            if (reformasStatusChartInstance) {
-                reformasStatusChartInstance.destroy();
-            }
-
-            if (labels.length > 0) {
-                reformasStatusChartNoData.classList.add('hidden');
-                reformasStatusChartCanvas.classList.remove('hidden');
-                reformasStatusChartInstance = new Chart(reformasStatusChartCanvas, {
-                    type: 'pie',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            data: data,
-                            backgroundColor: backgroundColors,
-                            hoverOffset: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                            },
-                            title: {
-                                display: false,
-                                text: 'Status dos Projetos de Reformas'
-                            }
-                        }
-                    }
-                });
-            } else {
-                reformasStatusChartNoData.classList.remove('hidden');
-                reformasStatusChartCanvas.classList.add('hidden');
-            }
-        }
-
-        /**
-         * Renderiza a tabela de Manutenção Geral.
-         */
-        async function renderManutencaoGeral() {
-            const tbody = document.getElementById('manutencao-geral-table-body');
-            if (!tbody) return;
-
-            const manutencaoData = await fetchDataFromApi(googleSheetManutencaoGeralApiUrl);
-
-            let tableHTML = '';
-            manutencaoData.forEach(item => {
-                let statusClass = '';
-                if (item.status === 'Concluído') {
-                    statusClass = 'bg-green-100 text-green-800';
-                } else if (item.status === 'Em Andamento') {
-                    statusClass = 'bg-yellow-100 text-yellow-800';
-                } else if (item.status === 'Pendente') {
-                    statusClass = 'bg-gray-100 text-gray-800';
+                try {
+                    const response = await fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                    });
+                    // Como estamos usando 'no-cors', a resposta direta não é lida,
+                    // mas o PDF é gerado no Apps Script.
+                    mensagemStatus.textContent = 'Laudo enviado com sucesso! O PDF foi gerado e salvo no Google Drive.';
+                    mensagemStatus.style.backgroundColor = '#d4edda';
+                    mensagemStatus.style.borderColor = '#c3e6cb';
+                    mensagemStatus.style.color = '#155724';
+                    laudoForm.reset();
+                    previewFotosDiv.innerHTML = '';
+                    document.getElementById('fiscal').value = 'Cleyton Jorge Dias';
+                    await carregarAgendamentosPendentesParaRDO();
+                } catch (error) {
+                    console.error('Erro ao enviar o laudo:', error);
+                    mensagemStatus.textContent = 'Erro ao enviar o laudo. Tente novamente.';
+                    mensagemStatus.classList.add('error');
                 }
-
-                tableHTML += `
-                    <tr class="bg-white border-b hover:bg-slate-50">
-                        <td class="px-6 py-4">${item.local}</td>
-                        <td class="px-6 py-4 font-medium text-slate-900">${item.tipoServico}</td>
-                        <td class="px-6 py-4">${item.descricaoBreve}</td>
-                        <td class="px-6 py-4">${item.dataSolicitacao}</td>
-                        <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
-                                ${item.status}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4">${item.responsavel}</td>
-                    </tr>
-                `;
             });
-            tbody.innerHTML = tableHTML;
-        }
 
-        /**
-         * Renderiza a tabela de Ferramentas de Trabalho.
-         */
-        async function renderFerramentas() {
-            const tbody = document.getElementById('ferramentas-table-body');
-            if (!tbody) return;
+            agendamentoForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                mensagemAgendamentoStatus.style.display = 'none';
+                mensagemAgendamentoStatus.classList.remove('error');
+                mensagemAgendamentoStatus.textContent = 'Salvando agendamento...';
+                mensagemAgendamentoStatus.style.display = 'block';
 
-            const ferramentasData = await fetchDataFromApi(googleSheetFerramentasApiUrl);
-
-            let tableHTML = '';
-            ferramentasData.forEach(item => {
-                let statusClass = '';
-                if (item.status === 'Disponível') {
-                    statusClass = 'bg-green-100 text-green-800';
-                } else if (item.status === 'Em Uso') {
-                    statusClass = 'bg-blue-100 text-blue-800';
-                } else if (item.status === 'Em Manutenção') {
-                    statusClass = 'bg-yellow-100 text-yellow-800';
-                }
-
-                tableHTML += `
-                    <tr class="bg-white border-b hover:bg-slate-50">
-                        <td class="px-6 py-4 font-medium text-slate-900">${item.nome}</td>
-                        <td class="px-6 py-4 text-center">${item.quantidade}</td>
-                        <td class="px-6 py-4">${item.localizacao}</td>
-                        <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
-                                ${item.status}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4">${item.responsavel}</td>
-                    </tr>
-                `;
-            });
-            tbody.innerHTML = tableHTML;
-        }
-
-        /**
-         * Renderiza a Visão Geral do painel, incluindo cartões de resumo e gráficos gerais.
-         */
-        async function renderVisaoGeral() {
-            const visaoGeralSummaryCards = document.getElementById('visao-geral-summary-cards');
-            const overallStatusChartCanvas = document.getElementById('overallStatusChart');
-            const overallStatusChartNoData = document.getElementById('overallStatusChartNoData');
-            const criticalStockChartCanvas = document.getElementById('criticalStockChart');
-            const criticalStockChartNoData = document.getElementById('criticalStockChartNoData');
-            const criticalStockChartNote = document.getElementById('criticalStockChartNote'); // Nova nota
-
-            // Buscar dados de todas as APIs para o resumo geral:
-            const reformasData = await fetchDataFromApi(googleSheetReformasApiUrl);
-            const manutencaoGeralData = await fetchDataFromApi(googleSheetManutencaoGeralApiUrl);
-            const estoqueData = await fetchDataFromApi(googleSheetEstoqueMateriaisApiUrl);
-            // const ferramentasData = await fetchDataFromApi(googleSheetFerramentasApiUrl); // Não usado diretamente nos resumos aqui, mas pode ser adicionado
-
-            // --- Calcular Resumos Gerais ---
-            const totalOS = reformasData.length + manutencaoGeralData.length; // Simplificado para exemplo
-            const osConcluidas = reformasData.filter(p => p.status === 'Concluído').length + manutencaoGeralData.filter(m => m.status === 'Concluído').length;
-            const osEmAndamento = reformasData.filter(p => p.status === 'Em Andamento').length + manutencaoGeralData.filter(m => m.status === 'Em Andamento').length;
-            const osPendentes = totalOS - osConcluidas - osEmAndamento;
-            const materiaisCriticosCount = estoqueData.filter(item => item.status === 'Crítico' || item.status === 'Abaixo do Mínimo').length;
-
-            visaoGeralSummaryCards.innerHTML = `
-                <div class="card p-5 flex items-center space-x-4">
-                    <div class="bg-blue-100 p-3 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="10" y2="9"></line></svg>
-                    </div>
-                    <div>
-                        <p class="text-slate-500 text-sm">Total de OS</p>
-                        <p class="text-2xl font-bold text-slate-800">${totalOS}</p>
-                    </div>
-                </div>
-                <div class="card p-5 flex items-center space-x-4">
-                    <div class="bg-green-100 p-3 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    </div>
-                    <div>
-                        <p class="text-slate-500 text-sm">OS Concluídas</p>
-                        <p class="text-2xl font-bold text-slate-800">${osConcluidas}</p>
-                    </div>
-                </div>
-                <div class="card p-5 flex items-center space-x-4">
-                    <div class="bg-yellow-100 p-3 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-600"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                    </div>
-                    <div>
-                        <p class="text-slate-500 text-sm">OS Em Andamento</p>
-                        <p class="text-2xl font-bold text-slate-800">${osEmAndamento}</p>
-                    </div>
-                </div>
-                <div class="card p-5 flex items-center space-x-4">
-                    <div class="bg-red-100 p-3 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                    </div>
-                    <div>
-                        <p class="text-slate-500 text-sm">Materiais Críticos</p>
-                        <p class="text-2xl font-bold text-slate-800">${materiaisCriticosCount}</p>
-                    </div>
-                </div>
-            `;
-
-            // --- Gráfico de Status Geral (Pizza) ---
-            const overallStatusCounts = {
-                'Concluído': osConcluidas,
-                'Em Andamento': osEmAndamento,
-                'Pendente': osPendentes
-            };
-            const overallLabels = Object.keys(overallStatusCounts);
-            const overallData = Object.values(overallStatusCounts);
-            const overallBackgroundColors = ['#10B981', '#3B82F6', '#9CA3AF']; // Green, Blue, Gray
-
-            if (overallStatusChartInstance) {
-                overallStatusChartInstance.destroy();
-            }
-            if (overallLabels.length > 0 && overallData.some(val => val > 0)) { // Verifica se há dados válidos
-                overallStatusChartNoData.classList.add('hidden');
-                overallStatusChartCanvas.classList.remove('hidden');
-                overallStatusChartInstance = new Chart(overallStatusChartCanvas, {
-                    type: 'pie',
-                    data: {
-                        labels: overallLabels,
-                        datasets: [{
-                            data: overallData,
-                            backgroundColor: overallBackgroundColors,
-                            hoverOffset: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'top' },
-                            title: { display: false }
-                        }
-                    }
-                });
-            } else {
-                overallStatusChartNoData.classList.remove('hidden');
-                overallStatusChartCanvas.classList.add('hidden');
-            }
-
-            // --- Gráfico de Estoque Crítico (Barras) ---
-            // Ordena e limita aos 10 itens mais críticos
-            const criticalItems = estoqueData
-                .filter(item => item.status === 'Crítico' || item.status === 'Abaixo do Mínimo')
-                .sort((a, b) => {
-                    // Prioriza "Crítico" sobre "Abaixo do Mínimo", depois por quantidade
-                    if (a.status === 'Crítico' && b.status !== 'Crítico') return -1;
-                    if (b.status === 'Crítico' && a.status !== 'Crítico') return 1;
-                    return a.quantidade - b.quantidade; // Menor quantidade primeiro
-                })
-                .slice(0, 10); // Limita aos 10 primeiros
-
-            const criticalLabels = criticalItems.map(item => item.material);
-            const criticalData = criticalItems.map(item => item.quantidade);
-            const criticalBackgroundColors = criticalItems.map(item => item.status === 'Crítico' ? '#EF4444' : '#F59E0B');
-
-            if (criticalStockChartInstance) {
-                criticalStockChartInstance.destroy();
-            }
-
-            if (criticalLabels.length > 0) {
-                criticalStockChartNoData.classList.add('hidden');
-                criticalStockChartCanvas.classList.remove('hidden');
-                criticalStockChartNote.classList.toggle('hidden', criticalItems.length < estoqueData.filter(item => item.status === 'Crítico' || item.status === 'Abaixo do Mínimo').length);
-
-                criticalStockChartInstance = new Chart(criticalStockChartCanvas, {
-                    type: 'bar',
-                    data: {
-                        labels: criticalLabels,
-                        datasets: [{
-                            label: 'Qtd. em Estoque',
-                            data: criticalData,
-                            backgroundColor: criticalBackgroundColors,
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            title: { display: false }
-                        },
-                        scales: {
-                            y: { beginAtZero: true, ticks: { precision: 0 } }
-                        }
-                    }
-                });
-            } else {
-                criticalStockChartNoData.classList.remove('hidden');
-                criticalStockChartCanvas.classList.add('hidden');
-                criticalStockChartNote.classList.add('hidden'); // Esconde a nota se não houver dados
-            }
-        }
-
-        /**
-         * Lida com o envio do formulário de Ordem de Serviço.
-         * @param {Event} event - O evento de envio do formulário.
-         */
-        async function handleOsFormSubmit(event) {
-            event.preventDefault(); // Previne o envio padrão do formulário
-            
-            const solicitante = document.getElementById('os-solicitante').value;
-            const local = document.getElementById('os-local').value;
-            const tipoServico = document.getElementById('os-tipo-servico').value;
-            const descricao = document.getElementById('os-descricao').value;
-            const osMessageEl = document.getElementById('os-message');
-
-            osMessageEl.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
-            osMessageEl.classList.add('bg-gray-100', 'text-gray-800');
-            osMessageEl.innerHTML = `<div class="loader"></div><p class="mt-2">Enviando Ordem de Serviço...</p>`;
-
-            try {
-                const response = await fetch(googleSheetOrdemServicoPostUrl, {
-                    method: 'POST',
-                    mode: 'no-cors', // Necessário para Apps Script POST simples
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        solicitante: solicitante,
-                        local: local,
-                        tipoServico: tipoServico,
-                        descricao: descricao
-                    })
-                });
-
-                // Como 'no-cors' não permite ler a resposta, assumimos sucesso se não houver erro de rede.
-                // Em um cenário real com CORS habilitado no Apps Script, você leria response.json()
-                // e verificaria data.success.
+                const formData = new FormData(agendamentoForm);
+                const data = {
+                    action: 'salvarAgendamento',
+                    unidade: formData.get('agendamentoUnidade'),
+                    dataAgendamento: formData.get('agendamentoData'),
+                    descricao: formData.get('agendamentoDescricao'),
+                    status: formData.get('agendamentoStatus')
+                };
                 
-                osMessageEl.classList.remove('bg-gray-100', 'text-gray-800');
-                osMessageEl.classList.add('bg-green-100', 'text-green-800');
-                osMessageEl.innerHTML = `<strong>Sucesso!</strong> Ordem de Serviço registrada com sucesso.<br>Aguarde o contato da equipe de manutenção.`;
-                document.getElementById('os-form').reset();
-
-            } catch (error) {
-                console.error('Erro ao registrar Ordem de Serviço:', error);
-                osMessageEl.classList.remove('bg-gray-100', 'text-gray-800', 'bg-green-100', 'text-green-800');
-                osMessageEl.classList.add('bg-red-100', 'text-red-800');
-                osMessageEl.innerHTML = `<strong>Erro!</strong> Não foi possível registrar a Ordem de Serviço. Tente novamente.`;
-            } finally {
-                setTimeout(() => {
-                    osMessageEl.classList.add('hidden');
-                }, 5000);
-            }
-        }
-
-        // --- Lógica de Abas ---
-
-        /**
-         * Alterna a aba ativa e exibe o conteúdo correspondente.
-         * @param {string} tabId - O ID da aba a ser ativada (ex: 'reformas', 'estoque-materiais').
-         */
-        function switchTab(tabId) {
-            // Remove a classe 'active' de todos os botões de aba
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.classList.remove('active');
+                try {
+                    await fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                    });
+                    mensagemAgendamentoStatus.textContent = 'Agendamento salvo com sucesso!';
+                    mensagemAgendamentoStatus.style.backgroundColor = '#d4edda';
+                    mensagemAgendamentoStatus.style.borderColor = '#c3e6cb';
+                    mensagemAgendamentoStatus.color = '#155724';
+                    agendamentoForm.reset();
+                    await carregarAgendamentos();
+                } catch (error) {
+                    console.error('Erro ao salvar agendamento:', error);
+                    mensagemAgendamentoStatus.textContent = 'Erro ao salvar agendamento. Tente novamente.';
+                    mensagemAgendamentoStatus.classList.add('error');
+                }
             });
 
-            // Adiciona a classe 'active' ao botão da aba clicada
-            document.getElementById(`tab-${tabId}`).classList.add('active');
-
-            // Esconde todos os conteúdos das abas
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.add('hidden');
-            });
-
-            // Exibe o conteúdo da aba clicada
-            document.getElementById(`content-${tabId}`).classList.remove('hidden');
-
-            currentActiveTab = tabId; // Atualiza a aba ativa
-
-            // Renderiza conteúdo específico para a aba, se necessário
-            if (tabId === 'visao-geral') {
-                renderVisaoGeral();
-            } else if (tabId === 'reformas') {
-                renderReformas();
-            } else if (tabId === 'manutencao-geral') {
-                renderManutencaoGeral();
-            } else if (tabId === 'estoque-materiais') {
-                renderEstoqueMateriais();
-            } else if (tabId === 'ferramentas') {
-                renderFerramentas();
-            }
-            // Outras abas podem ter funções de renderização específicas aqui
-        }
-
-        // --- Inicialização da Aplicação ---
-        document.addEventListener('DOMContentLoaded', () => {
-            updateLastUpdateTime(); // Atualiza o horário ao carregar
-
-            // Adiciona event listeners para os botões das abas
-            document.getElementById('tab-visao-geral').addEventListener('click', () => switchTab('visao-geral'));
-            document.getElementById('tab-reformas').addEventListener('click', () => switchTab('reformas'));
-            document.getElementById('tab-manutencao-geral').addEventListener('click', () => switchTab('manutencao-geral'));
-            document.getElementById('tab-ar-condicionado').addEventListener('click', () => switchTab('ar-condicionado'));
-            document.getElementById('tab-bebedouro').addEventListener('click', () => switchTab('bebedouro'));
-            document.getElementById('tab-estoque-materiais').addEventListener('click', () => switchTab('estoque-materiais'));
-            document.getElementById('tab-ferramentas').addEventListener('click', () => switchTab('ferramentas'));
-            document.getElementById('tab-ordem-servico').addEventListener('click', () => switchTab('ordem-servico'));
-
-            // Adiciona event listener para o formulário de Ordem de Serviço
-            const osForm = document.getElementById('os-form');
-            if (osForm) {
-                osForm.addEventListener('submit', handleOsFormSubmit);
+            async function carregarRdosConcluidos() {
+                const listaRdos = document.getElementById('listaRdos');
+                listaRdos.innerHTML = '<p class="loading-text">Carregando relatórios...</p>';
+                try {
+                    const response = await fetch(GAS_WEB_APP_URL + '?action=getListaRDOs');
+                    const rdos = await response.json();
+                    
+                    listaRdos.innerHTML = '';
+                    if (rdos.length > 0) {
+                        rdos.forEach(rdo => {
+                            const rdoItem = document.createElement('div');
+                            rdoItem.classList.add('rdo-item');
+                            rdoItem.innerHTML = `
+                                <div class="numero">#${rdo.numeroRDO}</div>
+                                <div class="data">${rdo.data}</div>
+                                <div class="unidade">${rdo.unidade}</div>
+                                <div class="acoes">
+                                    <a href="${rdo.pdfUrl}" target="_blank"><button>Ver PDF</button></a>
+                                    <button onclick="viewRDOPhotos('${rdo.numeroRDO}', '${rdo.fotosUrls}')">Ver Fotos</button>
+                                </div>
+                            `;
+                            listaRdos.appendChild(rdoItem);
+                        });
+                    } else {
+                        listaRdos.innerHTML = '<p class="loading-text">Nenhum relatório concluído.</p>';
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar RDOs:', error);
+                    listaRdos.innerHTML = '<p class="loading-text error">Erro ao carregar relatórios.</p>';
+                }
             }
 
-            // Ativa a aba inicial (Visão Geral)
-            switchTab(currentActiveTab);
+            // Função para abrir o modal de fotos
+            window.viewRDOPhotos = function(rdoNum, fotosUrlsString) {
+                modalContent.innerHTML = ''; // Limpa conteúdo anterior
+                const fotosUrls = fotosUrlsString.split(','); // Divide a string de URLs
+
+                if (fotosUrls.length > 0 && fotosUrls[0] !== '') {
+                    fotosUrls.forEach(url => {
+                        const img = document.createElement('img');
+                        img.src = url.trim(); // Remove espaços em branco
+                        img.style.maxWidth = '300px'; // Tamanho máximo para as fotos no modal
+                        img.style.maxHeight = '300px';
+                        img.style.objectFit = 'contain';
+                        img.style.border = '1px solid #ccc';
+                        img.style.borderRadius = '5px';
+                        modalContent.appendChild(img);
+                    });
+                } else {
+                    modalContent.innerHTML = '<p style="color: white;">Nenhuma foto disponível para este RDO.</p>';
+                }
+                photoModal.style.display = 'flex'; // Mostra o modal
+            };
+
+
+            async function carregarAgendamentos() {
+                const listaAgendamentos = document.getElementById('listaAgendamentos');
+                listaAgendamentos.innerHTML = '<p class="loading-text">Carregando agendamentos...</p>';
+                urgencyNotification.style.display = 'none';
+
+                let hasUrgency = false;
+
+                try {
+                    const response = await fetch(GAS_WEB_APP_URL + '?action=getAgendamentos');
+                    const agendamentos = await response.json();
+
+                    listaAgendamentos.innerHTML = '';
+                    if (agendamentos.length > 0) {
+                        agendamentos.forEach(agendamento => {
+                            const agendamentoItem = document.createElement('div');
+                            agendamentoItem.classList.add('agendamento-item');
+                            if (agendamento.status === 'Urgencia') {
+                                agendamentoItem.classList.add('urgencia');
+                                hasUrgency = true;
+                            }
+                            agendamentoItem.innerHTML = `
+                                <div class="numero">#${agendamento.numeroRDO}</div>
+                                <div class="data">${agendamento.dataAgendamento}</div>
+                                <div class="unidade">${agendamento.unidade}</div>
+                                <div class="descricao">${agendamento.descricao}</div>
+                                <div class="status">${agendamento.status}</div>
+                                <div class="acoes">
+                                    <!-- Futuras ações como editar ou marcar como concluído -->
+                                </div>
+                            `;
+                            listaAgendamentos.appendChild(agendamentoItem);
+                        });
+                        if (hasUrgency) {
+                            urgencyNotification.style.display = 'block';
+                        }
+                    } else {
+                        listaAgendamentos.innerHTML = '<p class="loading-text">Nenhum agendamento encontrado.</p>';
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar agendamentos:', error);
+                    listaAgendamentos.innerHTML = '<p class="loading-text error">Erro ao carregar agendamentos.</p>';
+                }
+            }
+
+            async function carregarAgendamentosPendentesParaRDO() {
+                tipoRDOSelect.innerHTML = '<option value="novo">Carregando agendamentos...</option>';
+                try {
+                    const response = await fetch(GAS_WEB_APP_URL + '?action=getPendingAgendamentos');
+                    const agendamentosPendentes = await response.json();
+
+                    tipoRDOSelect.innerHTML = '<option value="novo">Criar Novo (Emergência)</option>';
+                    if (agendamentosPendentes.length > 0) {
+                        agendamentosPendentes.forEach(agendamento => {
+                            const option = document.createElement('option');
+                            option.value = agendamento.numeroRDO;
+                            option.textContent = `#${agendamento.numeroRDO} - ${agendamento.unidade} (${agendamento.dataAgendamento}) ${agendamento.status === 'Urgencia' ? '⚠️ URGÊNCIA' : ''}`;
+                            tipoRDOSelect.appendChild(option);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar agendamentos pendentes:', error);
+                    tipoRDOSelect.innerHTML = '<option value="novo">Erro ao carregar agendamentos</option>';
+                }
+            }
+
+            showTab('tabNovoRDO');
         });
     </script>
 </body>
