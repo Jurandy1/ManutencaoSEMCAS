@@ -289,7 +289,7 @@
 
     <script>
         // ATENÇÃO: Substitua esta URL pela URL de implantação do seu Google Apps Script Web App
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbz9rjeJXmkwRSLn-UXGJodVhqE5qT5p7RS1C4FEjKVWmNCvyOqbqA1LD0CHpSaHX1w/exec'; // Placeholder, atualize após a implantação do Apps Script
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbz9rjeJXmkwRSLn-UXGJodVhqE5qT5p7RS1C4FEjKVWmNCvyOqbqA1LD0CHqHPxSaHX1w/exec'; // URL fornecida pelo usuário
 
         // Variável para armazenar o estado das fotos durante a edição
         let currentEditPhotos = []; // Armazena URLs das fotos existentes para edição
@@ -475,7 +475,7 @@
             const currentPhotosContainer = document.getElementById('edit-current-photos');
             currentPhotosContainer.innerHTML = '';
             if (currentEditPhotos.length > 0) {
-                currentEditPhotos.forEach((photoUrl, idx) => {
+                currentPhotosContainer.forEach((photoUrl, idx) => {
                     const photoDiv = document.createElement('div');
                     photoDiv.className = 'relative group';
                     photoDiv.innerHTML = `
