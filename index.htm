@@ -4,46 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Manutenção CSL - SEMCAS</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        body { font-family: 'Arial', sans-serif; margin: 0; padding: 10px; background: #f0f4f8; color: #333; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
         .header { text-align: center; margin-bottom: 20px; }
-        .header img { max-width: 80px; }
-        .header h1 { font-size: 1.5em; color: #0056b3; }
-        .header p { font-size: 0.8em; color: #666; }
-        .tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px; }
-        .tab-button { flex: 1; padding: 10px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px; font-size: 0.9em; }
-        .tab-button.active { background: #004080; }
-        .tab-content { display: none; background: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header img { max-width: 100px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .tab-button.active { background: #0056b3; }
+        .tab-content { display: none; background: white; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         .tab-content.active { display: block; }
-        .form-section { margin-bottom: 15px; }
-        .form-section h2, .form-section h3 { margin: 10px 0; font-size: 1.1em; color: #007bff; }
-        .form-group { margin-bottom: 10px; }
-        .form-group label { display: block; margin-bottom: 5px; font-size: 0.9em; }
-        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; }
-        .equipe-container { margin-bottom: 10px; border: 1px solid #ddd; padding: 10px; border-radius: 4px; background: #f9f9f9; }
-        .remove-btn { background: #dc3545; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; font-size: 0.8em; }
-        .add-btn { background: #28a745; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-size: 0.9em; width: 100%; }
-        .submit-btn { background: #007bff; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; font-size: 0.9em; width: 100%; }
-        .alert { background: #ffc107; padding: 10px; border-radius: 4px; margin-bottom: 15px; display: none; font-size: 0.9em; }
-        .rdos-card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin-bottom: 10px; box-shadow: 0 1px 5px rgba(0,0,0,0.1); }
-        .rdos-card h4 { margin: 0 0 5px; font-size: 1em; }
-        .rdos-card p { margin: 5px 0; font-size: 0.8em; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 20px; border-radius: 8px; max-width: 90%; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
-        .close-btn { float: right; font-size: 1.2em; cursor: pointer; color: #aaa; }
-        .share-btn { background: #25D366; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; margin-top: 10px; font-size: 0.9em; }
+        .form-section { margin-bottom: 20px; }
+        .form-section h2 { margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .equipe-container { margin-bottom: 10px; border: 1px solid #ddd; padding: 10px; border-radius: 4px; }
+        .remove-btn { background: #dc3545; color: white; border: none; padding: 5px 10px; cursor: pointer; }
+        .add-btn { background: #28a745; color: white; border: none; padding: 8px 15px; cursor: pointer; }
+        .submit-btn { background: #007bff; color: white; border: none; padding: 10px 20px; cursor: pointer; }
+        .alert { background: #ffc107; padding: 10px; border-radius: 4px; margin-bottom: 20px; display: none; }
+        .list-container div { padding: 10px; border-bottom: 1px solid #ddd; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 15% auto; padding: 20px; width: 80%; max-width: 600px; border-radius: 5px; }
+        .close-btn { float: right; font-size: 20px; cursor: pointer; }
+        .loader { display: none; text-align: center; margin: 20px; font-size: 1.2em; color: #007bff; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @media (max-width: 600px) {
             .tabs { flex-direction: column; }
             .tab-button { font-size: 1em; }
-            .form-group input, .form-group textarea { font-size: 1em; }
-            .photos img { max-width: 100%; }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <img src="https://www.saoluis.ma.gov.br/img/logo_mobile.png?1738946184" alt="Logo SEMCAS">
+        <img src="https://raw.githubusercontent.com/Jurandy1/ManutencaoSEMCAS/main/logo_mobile.png" alt="Logo SEMCAS">
         <h1>Sistema de Manutenção CSL - SEMCAS</h1>
         <p>PREFEITURA MUNICIPAL DE SÃO LUÍS</p>
         <p>SECRETARIA MUNICIPAL DA CRIANÇA E ASSISTÊNCIA SOCIAL - SEMCAS</p>
@@ -51,13 +45,14 @@
     </div>
 
     <div class="tabs">
-        <button class="tab-button active" onclick="openTab('novo-rdo')"><i class="fas fa-plus"></i> Novo RDO</button>
-        <button class="tab-button" onclick="openTab('rdos-concluidos')"><i class="fas fa-check-circle"></i> RDOs Concluídos</button>
-        <button class="tab-button" onclick="openTab('agendamentos')"><i class="fas fa-calendar-alt"></i> Agendamentos</button>
+        <button class="tab-button active" onclick="openTab('novo-rdo')">Novo RDO</button>
+        <button class="tab-button" onclick="openTab('rdos-concluidos')">RDOs Concluídos</button>
+        <button class="tab-button" onclick="openTab('agendamentos')">Agendamentos</button>
     </div>
 
     <div id="novo-rdo" class="tab-content active">
         <h2>Novo Relatório Diário de Obras</h2>
+        <div id="loader" class="loader"><i class="fas fa-spinner fa-spin"></i> Gerando laudo, aguarde...</div>
         <div class="form-section">
             <h3>Opções de RDO</h3>
             <div class="form-group">
@@ -161,22 +156,10 @@
         <div id="agendamentos-list">Carregando agendamentos...</div>
     </div>
 
-    <!-- Modal para Sucesso e Fotos -->
-    <div id="success-modal" class="modal">
+    <div id="modal" class="modal">
         <div class="modal-content">
-            <span class="close-btn" onclick="closeSuccessModal()">&times;</span>
-            <h3 id="success-title">Operação Concluída</h3>
-            <p id="success-message"></p>
-            <a id="pdf-link" href="" target="_blank">Ver PDF</a>
-            <button id="share-whatsapp" class="share-btn" onclick="sharePdf()">Enviar via WhatsApp</button>
-        </div>
-    </div>
-
-    <div id="photos-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closePhotosModal()">&times;</span>
-            <h3>Fotos do RDO</h3>
-            <div id="photos-content"></div>
+            <span class="close-btn" onclick="closeModal()">×</span>
+            <div id="modal-content"></div>
         </div>
     </div>
 
@@ -248,7 +231,7 @@
             btn.parentElement.remove();
         }
 
-        // Carregar RDOs (modernizado com cards)
+        // Carregar RDOs
         function loadRDOs() {
             fetch(`${WEB_APP_URL}?action=getListaRDOs`)
                 .then(response => response.json())
@@ -256,22 +239,16 @@
                     const container = document.getElementById('rdos-list');
                     container.innerHTML = '';
                     data.forEach(rdo => {
-                        let equipeList = '';
-                        try {
-                            const equipe = JSON.parse(rdo.equipe);
-                            equipeList = equipe.map(m => `<li>${m.nome} (${m.funcao}, Qtd: ${m.qtd})</li>`).join('');
-                        } catch (e) {
-                            equipeList = '<li>Erro ao carregar equipe</li>';
-                        }
                         container.innerHTML += `
                             <div class="rdos-card">
-                                <h4>Nº ${rdo.numeroRDO} - ${rdo.unidade} (${rdo.data})</h4>
-                                <p><strong>Fiscal:</strong> ${rdo.fiscal}</p>
-                                <p><strong>Tarefas:</strong> ${rdo.tarefasRealizadas}</p>
-                                <p><strong>Ocorrências:</strong> ${rdo.ocorrencias}</p>
-                                <p><strong>Equipe:</strong> <ul>${equipeList}</ul></p>
-                                <a href="${rdo.pdfUrl}" target="_blank">Ver PDF</a>
-                                <button onclick="showPhotos(['${rdo.fotosUrls.join("','")}'])">Ver Fotos</button>
+                                Nº ${rdo.numeroRDO}
+                                <p>Data: ${rdo.data}</p>
+                                <p>Unidade: ${rdo.unidade}</p>
+                                <p>Fiscal: ${rdo.fiscal}</p>
+                                <p>Tarefas Realizadas: ${rdo.tarefasRealizadas}</p>
+                                <p>Ocorrências: ${rdo.ocorrencias}</p>
+                                <p>Fotos URLs: ${rdo.fotosUrls}</p>
+                                <p>PDF URL: ${rdo.pdfUrl}</p>
                             </div>
                         `;
                     });
@@ -293,10 +270,12 @@
                     document.getElementById('alert-urgencia').style.display = hasUrgencia ? 'block' : 'none';
                     data.forEach(ag => {
                         container.innerHTML += `
-                            <div class="rdos-card">
-                                <h4>Nº ${ag.numeroRDO} - ${ag.unidade} (${ag.dataAgendamento}) - ${ag.status}</h4>
-                                <p>Criado em: ${ag.dataCriacao}</p>
+                            <div>
+                                Nº ${ag.numeroRDO}
+                                <p>Data Agendamento: ${ag.dataAgendamento}</p>
+                                <p>Unidade: ${ag.unidade}</p>
                                 <p>Descrição: ${ag.descricao}</p>
+                                <p>Status: ${ag.status}</p>
                             </div>
                         `;
                     });
@@ -307,51 +286,9 @@
                 });
         }
 
-        // Mostrar fotos no modal
-        function showPhotos(urls) {
-            const modal = document.getElementById('photos-modal');
-            const content = document.getElementById('photos-content');
-            content.innerHTML = urls.map(url => `<img src="${url}" style="max-width: 100%; margin: 5px; border-radius: 4px;">`).join('');
-            modal.style.display = 'flex';
-        }
-
-        // Fechar modal de fotos
-        function closePhotosModal() {
-            document.getElementById('photos-modal').style.display = 'none';
-        }
-
-        // Mostrar modal de sucesso
-        function showSuccessModal(title, message, pdfUrl) {
-            document.getElementById('success-title').innerText = title;
-            document.getElementById('success-message').innerText = message;
-            document.getElementById('pdf-link').href = pdfUrl;
-            document.getElementById('pdf-link').innerText = 'Ver PDF';
-            document.getElementById('success-modal').style.display = 'flex';
-            document.getElementById('share-whatsapp').dataset.pdfUrl = pdfUrl;
-        }
-
-        // Fechar modal de sucesso
-        function closeSuccessModal() {
-            document.getElementById('success-modal').style.display = 'none';
-        }
-
-        // Compartilhar PDF via WhatsApp (ou outro app)
-        function sharePdf() {
-            const pdfUrl = document.getElementById('share-whatsapp').dataset.pdfUrl;
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Laudo PDF',
-                    text: 'Aqui está o laudo gerado!',
-                    url: pdfUrl
-                }).then(() => console.log('Compartilhado com sucesso'))
-                  .catch(error => alert('Erro ao compartilhar: ' + error.message));
-            } else {
-                alert('Compartilhamento não suportado. Copie o link: ' + pdfUrl);
-            }
-        }
-
-        // Salvar RDO
+        // Salvar RDO com redimensionamento de fotos
         function salvarRDO() {
+            document.getElementById('loader').style.display = 'block';
             const rdoType = document.getElementById('rdo-type').value;
             const data = {
                 action: 'salvarRDO',
@@ -369,17 +306,35 @@
                 rdoAgendamentoNum: rdoType === 'agendamento' ? document.getElementById('agendamento-select').value : ''
             };
 
-            if (!data.data || !data.unidade || !data.fiscal || !data.tarefasRealizadas) {
-                alert('Preencha todos os campos obrigatórios.');
-                return;
-            }
-
             const files = document.getElementById('fotos').files;
             const promises = Array.from(files).map(file => {
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.readAsDataURL(file);
+                return new Promise((resolve, reject) => {
+                    if (file.size > 2 * 1024 * 1024) { // Max 2MB por foto
+                        reject('Foto muito grande. Máx 2MB.');
+                    }
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const maxSize = 1024;
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > height) {
+                            if (width > maxSize) {
+                                height *= maxSize / width;
+                                width = maxSize;
+                            }
+                        } else {
+                            if (height > maxSize) {
+                                width *= maxSize / height;
+                                height = maxSize;
+                            }
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.8)); // Qualidade 80% para reduzir tamanho
+                    };
+                    img.src = URL.createObjectURL(file);
                 });
             });
 
@@ -393,14 +348,21 @@
                     })
                     .then(response => response.json())
                     .then(result => {
+                        document.getElementById('loader').style.display = 'none';
                         if (result.success) {
-                            showSuccessModal('RDO Concluído', 'Laudo salvo com sucesso!', result.pdfUrl);
-                            loadRDOs(); // Atualiza lista
+                            alert('Laudo salvo com sucesso! PDF: ' + result.pdfUrl);
                         } else {
                             alert('Erro: ' + result.message);
                         }
                     })
-                    .catch(error => alert('Erro ao salvar RDO: ' + error.message));
+                    .catch(error => {
+                        document.getElementById('loader').style.display = 'none';
+                        alert('Erro ao salvar RDO: ' + error.message);
+                    });
+                })
+                .catch(error => {
+                    document.getElementById('loader').style.display = 'none';
+                    alert('Erro ao processar fotos: ' + error);
                 });
         }
 
@@ -422,9 +384,7 @@
             .then(response => response.json())
             .then(result => {
                 if (result.success) {
-                    showSuccessModal('Agendamento Concluído', 'Agendamento salvo com sucesso! Nenhum PDF gerado para agendamento.', '#'); // Sem PDF
-                    document.getElementById('pdf-link').style.display = 'none';
-                    document.getElementById('share-whatsapp').style.display = 'none';
+                    alert('Agendamento salvo com sucesso!');
                     document.getElementById('agendamento-unidade').value = '';
                     document.getElementById('agendamento-data').value = '';
                     document.getElementById('agendamento-descricao').value = '';
