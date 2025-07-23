@@ -21,7 +21,7 @@
         /* Estilos personalizados para o loader */
         .loader {
             border: 4px solid #f3f3f3;
-            border-top: 44px solid #3498db;
+            border-top: 4px solid #3498db; /* Corrigido de 44px para 4px */
             border-radius: 50%;
             width: 24px;
             height: 24px;
@@ -511,7 +511,7 @@
             currentPhotosContainer.innerHTML = '';
             // Corrigido: Iterar sobre `currentEditPhotos` para renderizar, não `currentPhotosContainer`
             if (currentEditPhotos.length > 0) {
-                currentEditPhotos.forEach((photoUrl, idx) => {
+                currentPhotosContainer.forEach((photoUrl, idx) => {
                     const photoDiv = document.createElement('div');
                     photoDiv.className = 'relative group';
                     photoDiv.innerHTML = `
