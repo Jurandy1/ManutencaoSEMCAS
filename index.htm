@@ -4,403 +4,961 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Manutenção CSL - SEMCAS</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
-        .header { text-align: center; margin-bottom: 20px; }
-        .header img { max-width: 100px; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab-button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
-        .tab-button.active { background: #0056b3; }
-        .tab-content { display: none; background: white; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .tab-content.active { display: block; }
-        .form-section { margin-bottom: 20px; }
-        .form-section h2 { margin-top: 0; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; }
-        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        .equipe-container { margin-bottom: 10px; border: 1px solid #ddd; padding: 10px; border-radius: 4px; }
-        .remove-btn { background: #dc3545; color: white; border: none; padding: 5px 10px; cursor: pointer; }
-        .add-btn { background: #28a745; color: white; border: none; padding: 8px 15px; cursor: pointer; }
-        .submit-btn { background: #007bff; color: white; border: none; padding: 10px 20px; cursor: pointer; }
-        .alert { background: #ffc107; padding: 10px; border-radius: 4px; margin-bottom: 20px; display: none; }
-        .list-container div { padding: 10px; border-bottom: 1px solid #ddd; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-        .modal-content { background: white; margin: 15% auto; padding: 20px; width: 80%; max-width: 600px; border-radius: 5px; }
-        .close-btn { float: right; font-size: 20px; cursor: pointer; }
-        .loader { display: none; text-align: center; margin: 20px; font-size: 1.2em; color: #007bff; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @media (max-width: 600px) {
-            .tabs { flex-direction: column; }
-            .tab-button { font-size: 1em; }
+        /* Estilos personalizados para o loader */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: none; /* Escondido por padrão */
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Estilos para o modal */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
         }
     </style>
 </head>
-<body>
-    <div class="header">
-        <img src="https://raw.githubusercontent.com/Jurandy1/ManutencaoSEMCAS/main/logo_mobile.png" alt="Logo SEMCAS">
-        <h1>Sistema de Manutenção CSL - SEMCAS</h1>
-        <p>PREFEITURA MUNICIPAL DE SÃO LUÍS</p>
-        <p>SECRETARIA MUNICIPAL DA CRIANÇA E ASSISTÊNCIA SOCIAL - SEMCAS</p>
-        <p>COORDENAÇÃO DE SUPORTE TRANSPORTE E LOGÍSTICA - CSL</p>
+<body class="font-sans bg-gray-100 p-4 sm:p-6 md:p-8">
+    <!-- Cabeçalho -->
+    <header class="text-center mb-6">
+        <img src="https://raw.githubusercontent.com/Jurandy1/ManutencaoSEMCAS/main/logo_mobile.png" alt="Logo SEMCAS" class="max-w-[100px] mx-auto mb-4 rounded-lg">
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-800">Prefeitura de São Luís</h1>
+        <h2 class="text-lg sm:text-xl text-gray-700">Secretaria Municipal da Criança e Assistência Social - SEMCAS</h2>
+        <h3 class="text-md sm:text-lg text-gray-600">Coordenação de Manutenção</h3>
+    </header>
+
+    <!-- Abas de Navegação -->
+    <div class="flex flex-col sm:flex-row gap-2 mb-6">
+        <button class="tab-button flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition duration-300 active" onclick="openTab(event, 'novoRDO')">Novo RDO</button>
+        <button class="tab-button flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition duration-300" onclick="openTab(event, 'rdosConcluidos')">RDOs Concluídos</button>
+        <button class="tab-button flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition duration-300" onclick="openTab(event, 'agendamentos')">Agendamentos</button>
     </div>
 
-    <div class="tabs">
-        <button class="tab-button active" onclick="openTab('novo-rdo')">Novo RDO</button>
-        <button class="tab-button" onclick="openTab('rdos-concluidos')">RDOs Concluídos</button>
-        <button class="tab-button" onclick="openTab('agendamentos')">Agendamentos</button>
-    </div>
-
-    <div id="novo-rdo" class="tab-content active">
-        <h2>Novo Relatório Diário de Obras</h2>
-        <div id="loader" class="loader"><i class="fas fa-spinner fa-spin"></i> Gerando laudo, aguarde...</div>
-        <div class="form-section">
-            <h3>Opções de RDO</h3>
-            <div class="form-group">
-                <label>Tipo de RDO:</label>
-                <select id="rdo-type" onchange="toggleRdoType()">
-                    <option value="novo">Criar Novo (Emergência)</option>
-                    <option value="agendamento">A partir de Agendamento</option>
-                </select>
-                <select id="agendamento-select" style="display: none; margin-top: 10px;"></select>
-            </div>
-        </div>
-        <div class="form-section">
-            <h3>Dados Gerais</h3>
-            <div class="form-group">
-                <label>Data:</label>
-                <input type="date" id="data">
-            </div>
-            <div class="form-group">
-                <label>Nome da Unidade:</label>
-                <input type="text" id="unidade">
-            </div>
-            <div class="form-group">
-                <label>Fiscal:</label>
-                <input type="text" id="fiscal">
-            </div>
-        </div>
-        <div class="form-section">
-            <h3>Mão de Obra</h3>
-            <div id="equipe-container">
-                <div class="equipe-container">
+    <!-- Conteúdo da Aba "Novo RDO" -->
+    <div id="novoRDO" class="tab-content bg-white p-6 rounded-lg shadow-lg active">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">Gerar Novo RDO</h2>
+        <form id="rdoForm" class="space-y-4">
+            <!-- Seção de Dados Gerais -->
+            <div class="form-section p-4 border border-gray-200 rounded-md">
+                <h3 class="text-lg font-medium mb-3 text-gray-700">Dados Gerais</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="form-group">
-                        <label>Nome:</label>
-                        <input type="text" class="equipe-nome">
+                        <label for="unidade" class="block text-gray-700 text-sm font-bold mb-2">Unidade:</label>
+                        <input type="text" id="unidade" name="unidade" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
                     </div>
                     <div class="form-group">
-                        <label>Função / Cargo:</label>
-                        <input type="text" class="equipe-funcao">
+                        <label for="data" class="block text-gray-700 text-sm font-bold mb-2">Data:</label>
+                        <input type="date" id="data" name="data" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
                     </div>
                     <div class="form-group">
-                        <label>Qtd:</label>
-                        <input type="number" class="equipe-qtd" min="1">
+                        <label for="fiscal" class="block text-gray-700 text-sm font-bold mb-2">Fiscal:</label>
+                        <input type="text" id="fiscal" name="fiscal" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
                     </div>
-                    <button class="remove-btn" onclick="removeEquipe(this)">Remover</button>
                 </div>
             </div>
-            <button class="add-btn" onclick="addEquipe()">Adicionar Mais Mão de Obra</button>
-        </div>
-        <div class="form-section">
-            <h3>Tarefas Realizadas</h3>
-            <div class="form-group">
-                <textarea id="tarefas" rows="5"></textarea>
+
+            <!-- Seção de Mão de Obra -->
+            <div class="form-section p-4 border border-gray-200 rounded-md">
+                <h3 class="text-lg font-medium mb-3 text-gray-700">Mão de Obra</h3>
+                <div id="equipe-container" class="space-y-3">
+                    <div class="flex flex-col sm:flex-row gap-2 items-end equipe-item">
+                        <div class="flex-1 w-full">
+                            <label for="nome-equipe-0" class="block text-gray-700 text-sm font-bold mb-2">Nome:</label>
+                            <input type="text" id="nome-equipe-0" name="nomeEquipe[]" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                        </div>
+                        <div class="flex-1 w-full">
+                            <label for="funcao-equipe-0" class="block text-gray-700 text-sm font-bold mb-2">Função:</label>
+                            <input type="text" id="funcao-equipe-0" name="funcaoEquipe[]" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                        </div>
+                        <button type="button" onclick="removeEquipe(this)" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg flex-shrink-0"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <button type="button" onclick="addEquipe()" class="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"><i class="fas fa-plus"></i> Adicionar Mais Mão de Obra</button>
             </div>
-        </div>
-        <div class="form-section">
-            <h3>Ocorrências</h3>
-            <div class="form-group">
-                <textarea id="ocorrencias" rows="5"></textarea>
+
+            <!-- Seção de Tarefas Realizadas -->
+            <div class="form-section p-4 border border-gray-200 rounded-md">
+                <h3 class="text-lg font-medium mb-3 text-gray-700">Tarefas Realizadas</h3>
+                <textarea id="tarefasRealizadas" name="tarefasRealizadas" rows="5" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required></textarea>
             </div>
-        </div>
-        <div class="form-section">
-            <h3>Fotos da Manutenção</h3>
-            <div class="form-group">
-                <input type="file" id="fotos" multiple accept="image/*">
+
+            <!-- Seção de Ocorrências -->
+            <div class="form-section p-4 border border-gray-200 rounded-md">
+                <h3 class="text-lg font-medium mb-3 text-gray-700">Ocorrências</h3>
+                <textarea id="ocorrencias" name="ocorrencias" rows="5" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required></textarea>
             </div>
-        </div>
-        <button class="submit-btn" onclick="salvarRDO()">Gerar Laudo e Salvar</button>
+
+            <!-- Seção de Fotos -->
+            <div class="form-section p-4 border border-gray-200 rounded-md">
+                <h3 class="text-lg font-medium mb-3 text-gray-700">Fotos</h3>
+                <input type="file" id="fotos" name="fotos" accept="image/*" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                <p class="text-sm text-gray-500 mt-2">Máximo de 10 fotos. As fotos serão otimizadas antes do upload.</p>
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300">
+                Gerar Laudo e Salvar
+                <span id="rdo-loader" class="loader ml-2"></span>
+            </button>
+        </form>
     </div>
 
-    <div id="rdos-concluidos" class="tab-content">
-        <h2>Relatórios de Obras Concluídos</h2>
-        <div id="rdos-list">Carregando relatórios...</div>
-    </div>
-
-    <div id="agendamentos" class="tab-content">
-        <h2>Agendamentos de Manutenção</h2>
-        <div id="alert-urgencia" class="alert">⚠️ <strong>ATENÇÃO:</strong> Existem agendamentos com status de <strong>Urgência</strong>!</div>
-        <div class="form-section">
-            <h3>Novo Agendamento</h3>
-            <div class="form-group">
-                <label>Nome da Unidade:</label>
-                <input type="text" id="agendamento-unidade">
-            </div>
-            <div class="form-group">
-                <label>Data Agendada:</label>
-                <input type="date" id="agendamento-data">
-            </div>
-            <div class="form-group">
-                <label>Descrição do Serviço:</label>
-                <textarea id="agendamento-descricao" rows="5"></textarea>
-            </div>
-            <div class="form-group">
-                <label>Status:</label>
-                <select id="agendamento-status">
-                    <option value="Normal">Normal</option>
-                    <option value="Urgência">Urgência</option>
-                </select>
-            </div>
-            <button class="submit-btn" onclick="salvarAgendamento()">Salvar Agendamento</button>
+    <!-- Conteúdo da Aba "RDOs Concluídos" -->
+    <div id="rdosConcluidos" class="tab-content bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">RDOs Concluídos</h2>
+        <div id="rdos-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- RDOs serão carregados aqui -->
         </div>
-        <h3>Lista de Agendamentos</h3>
-        <div id="agendamentos-list">Carregando agendamentos...</div>
+        <div id="rdos-loader" class="loader mx-auto mt-4"></div>
     </div>
 
-    <div id="modal" class="modal">
+    <!-- Conteúdo da Aba "Agendamentos" -->
+    <div id="agendamentos" class="tab-content bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">Agendamentos</h2>
+        <div id="agendamento-urgente-alert" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 hidden" role="alert">
+            <strong class="font-bold">Alerta de Urgência!</strong>
+            <span class="block sm:inline">Existem agendamentos pendentes com status "Urgente".</span>
+        </div>
+
+        <div class="form-section p-4 border border-gray-200 rounded-md mb-6">
+            <h3 class="text-lg font-medium mb-3 text-gray-700">Novo Agendamento</h3>
+            <form id="agendamentoForm" class="space-y-4">
+                <div class="form-group">
+                    <label for="agendamento-unidade" class="block text-gray-700 text-sm font-bold mb-2">Unidade:</label>
+                    <input type="text" id="agendamento-unidade" name="unidade" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="form-group">
+                    <label for="agendamento-data" class="block text-gray-700 text-sm font-bold mb-2">Data Agendamento:</label>
+                    <input type="date" id="agendamento-data" name="dataAgendamento" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="form-group">
+                    <label for="agendamento-descricao" class="block text-gray-700 text-sm font-bold mb-2">Descrição:</label>
+                    <textarea id="agendamento-descricao" name="descricao" rows="3" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="agendamento-status" class="block text-gray-700 text-sm font-bold mb-2">Status:</label>
+                    <select id="agendamento-status" name="status" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        <option value="Pendente">Pendente</option>
+                        <option value="Urgente">Urgente</option>
+                        <option value="Concluído">Concluído</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300">
+                    Salvar Agendamento
+                    <span id="agendamento-loader" class="loader ml-2"></span>
+                </button>
+            </form>
+        </div>
+        <div id="agendamentos-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Agendamentos serão carregados aqui -->
+        </div>
+        <div id="agendamentos-loader" class="loader mx-auto mt-4"></div>
+    </div>
+
+    <!-- Modal de Mensagens (Sucesso/Erro) -->
+    <div id="messageModal" class="modal">
         <div class="modal-content">
-            <span class="close-btn" onclick="closeModal()">×</span>
-            <div id="modal-content"></div>
+            <span class="close-button" onclick="closeMessageModal()">&times;</span>
+            <h3 id="messageModalTitle" class="text-xl font-bold mb-4"></h3>
+            <p id="messageModalBody" class="mb-4"></p>
+            <div id="messageModalActions" class="flex flex-col sm:flex-row justify-center gap-4">
+                <!-- Botões dinâmicos aqui -->
+            </div>
         </div>
     </div>
+
+    <!-- Modal de Fotos -->
+    <div id="photosModal" class="modal">
+        <div class="modal-content max-w-2xl">
+            <span class="close-button" onclick="closePhotosModal()">&times;</span>
+            <h3 class="text-xl font-bold mb-4">Fotos do RDO</h3>
+            <div id="photosGallery" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Imagens serão carregadas aqui -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edição de RDO -->
+    <div id="editRDOModal" class="modal">
+        <div class="modal-content max-w-2xl">
+            <span class="close-button" onclick="closeEditRDOModal()">&times;</span>
+            <h3 class="text-xl font-bold mb-4">Editar RDO <span id="edit-rdo-number"></span></h3>
+            <form id="editRDOForm" class="space-y-4">
+                <input type="hidden" id="edit-numeroRDO" name="numeroRDO">
+                <!-- Seção de Dados Gerais - Edição -->
+                <div class="form-section p-4 border border-gray-200 rounded-md">
+                    <h3 class="text-lg font-medium mb-3 text-gray-700">Dados Gerais</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label for="edit-unidade" class="block text-gray-700 text-sm font-bold mb-2">Unidade:</label>
+                            <input type="text" id="edit-unidade" name="unidade" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-data" class="block text-gray-700 text-sm font-bold mb-2">Data:</label>
+                            <input type="date" id="edit-data" name="data" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-fiscal" class="block text-gray-700 text-sm font-bold mb-2">Fiscal:</label>
+                            <input type="text" id="edit-fiscal" name="fiscal" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção de Mão de Obra - Edição -->
+                <div class="form-section p-4 border border-gray-200 rounded-md">
+                    <h3 class="text-lg font-medium mb-3 text-gray-700">Mão de Obra</h3>
+                    <div id="edit-equipe-container" class="space-y-3">
+                        <!-- Itens da equipe serão carregados aqui -->
+                    </div>
+                    <button type="button" onclick="addEditEquipe()" class="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"><i class="fas fa-plus"></i> Adicionar Mais Mão de Obra</button>
+                </div>
+
+                <!-- Seção de Tarefas Realizadas - Edição -->
+                <div class="form-section p-4 border border-gray-200 rounded-md">
+                    <h3 class="text-lg font-medium mb-3 text-gray-700">Tarefas Realizadas</h3>
+                    <textarea id="edit-tarefasRealizadas" name="tarefasRealizadas" rows="5" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required></textarea>
+                </div>
+
+                <!-- Seção de Ocorrências - Edição -->
+                <div class="form-section p-4 border border-gray-200 rounded-md">
+                    <h3 class="text-lg font-medium mb-3 text-gray-700">Ocorrências</h3>
+                    <textarea id="edit-ocorrencias" name="ocorrencias" rows="5" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required></textarea>
+                </div>
+
+                <!-- Seção de Fotos - Edição -->
+                <div class="form-section p-4 border border-gray-200 rounded-md">
+                    <h3 class="text-lg font-medium mb-3 text-gray-700">Fotos Atuais</h3>
+                    <div id="edit-current-photos" class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
+                        <!-- Fotos atuais serão exibidas aqui para visualização/remoção -->
+                    </div>
+                    <h3 class="text-lg font-medium mb-3 text-gray-700">Adicionar Novas Fotos</h3>
+                    <input type="file" id="edit-fotos" name="fotos" accept="image/*" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    <p class="text-sm text-gray-500 mt-2">Máximo de 10 fotos no total. As fotos serão otimizadas antes do upload.</p>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300">
+                    Salvar Edição
+                    <span id="edit-rdo-loader" class="loader ml-2"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
 
     <script>
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbz9rjeJXmkwRSLn-UXGJodVhqE5qT5p7RS1C4FEjKVWmNCvyOqbqA1LD0CHqHPxSaHX1w/exec';
+        // ATENÇÃO: Substitua esta URL pela URL de implantação do seu Google Apps Script Web App
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbz9rjeJXmkwRSLn-UXGJodVhqE5qT5p7RS1C4FEjKVWmNCvyOqbqA1LD0CHpSaHX1w/exec'; // Placeholder, atualize após a implantação do Apps Script
 
-        // Função para abrir abas
-        function openTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            document.querySelector(`[onclick="openTab('${tabId}')"]`).classList.add('active');
+        // Variável para armazenar o estado das fotos durante a edição
+        let currentEditPhotos = []; // Armazena URLs das fotos existentes para edição
 
-            if (tabId === 'rdos-concluidos') loadRDOs();
-            if (tabId === 'agendamentos') loadAgendamentos();
+        // --- Funções de UI e Utilidade ---
+
+        // Função para mostrar o loader
+        function showLoader(elementId) {
+            document.getElementById(elementId).style.display = 'inline-block';
         }
 
-        // Carregar agendamentos pendentes no select
-        function loadPendingAgendamentos() {
-            fetch(`${WEB_APP_URL}?action=getPendingAgendamentos`)
-                .then(response => response.json())
-                .then(data => {
-                    const select = document.getElementById('agendamento-select');
-                    select.innerHTML = '<option value="">Selecione um agendamento</option>';
-                    data.forEach(ag => {
-                        select.innerHTML += `<option value="${ag.numeroRDO}">${ag.numeroRDO} - ${ag.unidade} (${ag.dataAgendamento})</option>`;
-                    });
-                })
-                .catch(error => console.error('Erro ao carregar agendamentos pendentes:', error));
+        // Função para esconder o loader
+        function hideLoader(elementId) {
+            document.getElementById(elementId).style.display = 'none';
         }
 
-        // Alternar tipo de RDO
-        function toggleRdoType() {
-            const rdoType = document.getElementById('rdo-type').value;
-            const agendamentoSelect = document.getElementById('agendamento-select');
-            if (rdoType === 'agendamento') {
-                agendamentoSelect.style.display = 'block';
-                loadPendingAgendamentos();
+        // Função para abrir o modal de mensagens
+        function showMessageModal(title, body, actions = []) {
+            const modal = document.getElementById('messageModal');
+            document.getElementById('messageModalTitle').innerText = title;
+            document.getElementById('messageModalBody').innerText = body;
+            const actionsContainer = document.getElementById('messageModalActions');
+            actionsContainer.innerHTML = ''; // Limpa botões anteriores
+
+            actions.forEach(action => {
+                const button = document.createElement('button');
+                button.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300';
+                button.innerText = action.text;
+                button.onclick = action.onClick;
+                actionsContainer.appendChild(button);
+            });
+            modal.style.display = 'flex'; // Usa flex para centralizar
+        }
+
+        // Função para fechar o modal de mensagens
+        function closeMessageModal() {
+            document.getElementById('messageModal').style.display = 'none';
+        }
+
+        // Função para abrir o modal de fotos
+        function showPhotosModal(photos) {
+            const modal = document.getElementById('photosModal');
+            const gallery = document.getElementById('photosGallery');
+            gallery.innerHTML = ''; // Limpa fotos anteriores
+
+            if (photos && photos.length > 0) {
+                photos.forEach(photoUrl => {
+                    const img = document.createElement('img');
+                    img.src = photoUrl;
+                    img.alt = 'Foto do RDO';
+                    img.className = 'w-full h-auto object-cover rounded-lg shadow-md';
+                    gallery.appendChild(img);
+                });
             } else {
-                agendamentoSelect.style.display = 'none';
+                gallery.innerHTML = '<p class="text-gray-600 col-span-full">Nenhuma foto disponível para este RDO.</p>';
             }
+            modal.style.display = 'flex';
         }
 
-        // Adicionar mão de obra
+        // Função para fechar o modal de fotos
+        function closePhotosModal() {
+            document.getElementById('photosModal').style.display = 'none';
+        }
+
+        // Função para abrir o modal de edição de RDO
+        function openEditRDOModal(rdoData) {
+            const modal = document.getElementById('editRDOModal');
+            document.getElementById('edit-rdo-number').innerText = rdoData.numeroRDO;
+            document.getElementById('edit-numeroRDO').value = rdoData.numeroRDO;
+            document.getElementById('edit-unidade').value = rdoData.unidade;
+            document.getElementById('edit-data').value = rdoData.data;
+            document.getElementById('edit-fiscal').value = rdoData.fiscal;
+            document.getElementById('edit-tarefasRealizadas').value = rdoData.tarefasRealizadas;
+            document.getElementById('edit-ocorrencias').value = rdoData.ocorrencias;
+
+            // Preencher equipe
+            const equipeContainer = document.getElementById('edit-equipe-container');
+            equipeContainer.innerHTML = '';
+            currentEditPhotos = rdoData.fotosUrls || []; // Zera e preenche com as fotos atuais
+
+            if (rdoData.equipe && rdoData.equipe.length > 0) {
+                rdoData.equipe.forEach((membro, index) => {
+                    addEditEquipe(membro.nome, membro.funcao);
+                });
+            } else {
+                addEditEquipe(); // Adiciona um campo vazio se não houver equipe
+            }
+
+            // Exibir fotos atuais no modal de edição
+            const currentPhotosContainer = document.getElementById('edit-current-photos');
+            currentPhotosContainer.innerHTML = '';
+            if (currentEditPhotos.length > 0) {
+                currentEditPhotos.forEach((photoUrl, index) => {
+                    const photoDiv = document.createElement('div');
+                    photoDiv.className = 'relative group';
+                    photoDiv.innerHTML = `
+                        <img src="${photoUrl}" alt="Foto atual" class="w-full h-24 object-cover rounded-md shadow-sm">
+                        <button type="button" onclick="removeEditPhoto(${index})" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    `;
+                    currentPhotosContainer.appendChild(photoDiv);
+                });
+            } else {
+                currentPhotosContainer.innerHTML = '<p class="text-sm text-gray-500 col-span-full">Nenhuma foto atual.</p>';
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        // Função para fechar o modal de edição de RDO
+        function closeEditRDOModal() {
+            document.getElementById('editRDOModal').style.display = 'none';
+            document.getElementById('editRDOForm').reset(); // Limpa o formulário
+            currentEditPhotos = []; // Limpa as fotos em edição
+        }
+
+        // Função para adicionar campo de mão de obra (Novo RDO)
+        let equipeCount = 0;
         function addEquipe() {
             const container = document.getElementById('equipe-container');
+            const newIndex = equipeCount++;
             const div = document.createElement('div');
-            div.className = 'equipe-container';
+            div.className = 'flex flex-col sm:flex-row gap-2 items-end equipe-item';
             div.innerHTML = `
-                <div class="form-group">
-                    <label>Nome:</label>
-                    <input type="text" class="equipe-nome">
+                <div class="flex-1 w-full">
+                    <label for="nome-equipe-${newIndex}" class="block text-gray-700 text-sm font-bold mb-2">Nome:</label>
+                    <input type="text" id="nome-equipe-${newIndex}" name="nomeEquipe[]" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
                 </div>
-                <div class="form-group">
-                    <label>Função / Cargo:</label>
-                    <input type="text" class="equipe-funcao">
+                <div class="flex-1 w-full">
+                    <label for="funcao-equipe-${newIndex}" class="block text-gray-700 text-sm font-bold mb-2">Função:</label>
+                    <input type="text" id="funcao-equipe-${newIndex}" name="funcaoEquipe[]" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
                 </div>
-                <div class="form-group">
-                    <label>Qtd:</label>
-                    <input type="number" class="equipe-qtd" min="1">
-                </div>
-                <button class="remove-btn" onclick="removeEquipe(this)">Remover</button>
+                <button type="button" onclick="removeEquipe(this)" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg flex-shrink-0"><i class="fas fa-trash"></i></button>
             `;
             container.appendChild(div);
         }
 
-        // Remover mão de obra
-        function removeEquipe(btn) {
-            btn.parentElement.remove();
+        // Função para remover campo de mão de obra (Novo RDO)
+        function removeEquipe(button) {
+            const equipeItem = button.closest('.equipe-item');
+            if (document.querySelectorAll('.equipe-item').length > 1) { // Garante que pelo menos um campo permaneça
+                equipeItem.remove();
+            } else {
+                showMessageModal('Atenção', 'Deve haver pelo menos um membro na equipe.');
+            }
         }
 
-        // Carregar RDOs
-        function loadRDOs() {
-            fetch(`${WEB_APP_URL}?action=getListaRDOs`)
-                .then(response => response.json())
-                .then(data => {
-                    const container = document.getElementById('rdos-list');
-                    container.innerHTML = '';
-                    data.forEach(rdo => {
-                        container.innerHTML += `
-                            <div class="rdos-card">
-                                Nº ${rdo.numeroRDO}
-                                <p>Data: ${rdo.data}</p>
-                                <p>Unidade: ${rdo.unidade}</p>
-                                <p>Fiscal: ${rdo.fiscal}</p>
-                                <p>Tarefas Realizadas: ${rdo.tarefasRealizadas}</p>
-                                <p>Ocorrências: ${rdo.ocorrencias}</p>
-                                <p>Fotos URLs: ${rdo.fotosUrls}</p>
-                                <p>PDF URL: ${rdo.pdfUrl}</p>
-                            </div>
-                        `;
-                    });
-                })
-                .catch(error => {
-                    console.error('Erro ao carregar RDOs:', error);
-                    document.getElementById('rdos-list').innerHTML = 'Erro ao carregar relatórios.';
+        // Função para adicionar campo de mão de obra (Edição de RDO)
+        function addEditEquipe(nome = '', funcao = '') {
+            const container = document.getElementById('edit-equipe-container');
+            const newIndex = container.children.length; // Use length for unique index within edit modal
+            const div = document.createElement('div');
+            div.className = 'flex flex-col sm:flex-row gap-2 items-end equipe-item';
+            div.innerHTML = `
+                <div class="flex-1 w-full">
+                    <label for="edit-nome-equipe-${newIndex}" class="block text-gray-700 text-sm font-bold mb-2">Nome:</label>
+                    <input type="text" id="edit-nome-equipe-${newIndex}" name="nomeEquipe[]" value="${nome}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="flex-1 w-full">
+                    <label for="edit-funcao-equipe-${newIndex}" class="block text-gray-700 text-sm font-bold mb-2">Função:</label>
+                    <input type="text" id="edit-funcao-equipe-${newIndex}" name="funcaoEquipe[]" value="${funcao}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <button type="button" onclick="removeEditEquipe(this)" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg flex-shrink-0"><i class="fas fa-trash"></i></button>
+            `;
+            container.appendChild(div);
+        }
+
+        // Função para remover campo de mão de obra (Edição de RDO)
+        function removeEditEquipe(button) {
+            const equipeItem = button.closest('.equipe-item');
+            if (document.querySelectorAll('#edit-equipe-container .equipe-item').length > 1) {
+                equipeItem.remove();
+            } else {
+                showMessageModal('Atenção', 'Deve haver pelo menos um membro na equipe.');
+            }
+        }
+
+        // Função para remover uma foto existente do array currentEditPhotos
+        function removeEditPhoto(index) {
+            currentEditPhotos.splice(index, 1); // Remove a foto do array
+            // Atualiza a exibição das fotos no modal de edição
+            const currentPhotosContainer = document.getElementById('edit-current-photos');
+            currentPhotosContainer.innerHTML = '';
+            if (currentEditPhotos.length > 0) {
+                currentEditPhotos.forEach((photoUrl, idx) => {
+                    const photoDiv = document.createElement('div');
+                    photoDiv.className = 'relative group';
+                    photoDiv.innerHTML = `
+                        <img src="${photoUrl}" alt="Foto atual" class="w-full h-24 object-cover rounded-md shadow-sm">
+                        <button type="button" onclick="removeEditPhoto(${idx})" class="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    `;
+                    currentPhotosContainer.appendChild(photoDiv);
                 });
+            } else {
+                currentPhotosContainer.innerHTML = '<p class="text-sm text-gray-500 col-span-full">Nenhuma foto atual.</p>';
+            }
+            showMessageModal('Foto Removida', 'A foto foi removida da lista para o RDO. Salve a edição para confirmar a remoção.');
         }
 
-        // Carregar agendamentos
-        function loadAgendamentos() {
-            fetch(`${WEB_APP_URL}?action=getAgendamentos`)
-                .then(response => response.json())
-                .then(data => {
-                    const container = document.getElementById('agendamentos-list');
-                    container.innerHTML = '';
-                    const hasUrgencia = data.some(ag => ag.status === 'Urgência');
-                    document.getElementById('alert-urgencia').style.display = hasUrgencia ? 'block' : 'none';
-                    data.forEach(ag => {
-                        container.innerHTML += `
-                            <div>
-                                Nº ${ag.numeroRDO}
-                                <p>Data Agendamento: ${ag.dataAgendamento}</p>
-                                <p>Unidade: ${ag.unidade}</p>
-                                <p>Descrição: ${ag.descricao}</p>
-                                <p>Status: ${ag.status}</p>
-                            </div>
-                        `;
-                    });
-                })
-                .catch(error => {
-                    console.error('Erro ao carregar agendamentos:', error);
-                    document.getElementById('agendamentos-list').innerHTML = 'Erro ao carregar agendamentos.';
-                });
-        }
 
-        // Salvar RDO com redimensionamento de fotos
-        function salvarRDO() {
-            document.getElementById('loader').style.display = 'block';
-            const rdoType = document.getElementById('rdo-type').value;
-            const data = {
-                action: 'salvarRDO',
-                data: document.getElementById('data').value,
-                unidade: document.getElementById('unidade').value,
-                fiscal: document.getElementById('fiscal').value,
-                equipe: Array.from(document.querySelectorAll('.equipe-container')).map(container => ({
-                    nome: container.querySelector('.equipe-nome').value,
-                    funcao: container.querySelector('.equipe-funcao').value,
-                    qtd: container.querySelector('.equipe-qtd').value
-                })),
-                tarefasRealizadas: document.getElementById('tarefas').value,
-                ocorrencias: document.getElementById('ocorrencias').value,
-                fotos: [],
-                rdoAgendamentoNum: rdoType === 'agendamento' ? document.getElementById('agendamento-select').value : ''
-            };
-
-            const files = document.getElementById('fotos').files;
-            const promises = Array.from(files).map(file => {
-                return new Promise((resolve, reject) => {
-                    if (file.size > 2 * 1024 * 1024) { // Max 2MB por foto
-                        reject('Foto muito grande. Máx 2MB.');
-                    }
+        // Função para redimensionar e converter imagem para Base64
+        function resizeAndConvertToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
                     const img = new Image();
                     img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const maxSize = 1024;
+                        const MAX_WIDTH = 1920; // Largura máxima desejada
+                        const MAX_HEIGHT = 1080; // Altura máxima desejada
                         let width = img.width;
                         let height = img.height;
+
                         if (width > height) {
-                            if (width > maxSize) {
-                                height *= maxSize / width;
-                                width = maxSize;
+                            if (width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
                             }
                         } else {
-                            if (height > maxSize) {
-                                width *= maxSize / height;
-                                height = maxSize;
+                            if (height > MAX_HEIGHT) {
+                                width *= MAX_HEIGHT / height;
+                                height = MAX_HEIGHT;
                             }
                         }
+
+                        const canvas = document.createElement('canvas');
                         canvas.width = width;
                         canvas.height = height;
-                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.8)); // Qualidade 80% para reduzir tamanho
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Comprime a imagem como JPEG com qualidade 80%
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                        resolve(dataUrl);
                     };
-                    img.src = URL.createObjectURL(file);
-                });
+                    img.onerror = (error) => reject(error);
+                    img.src = event.target.result;
+                };
+                reader.onerror = (error) => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // --- Funções de Navegação de Abas ---
+        function openTab(evt, tabName) {
+            // Declara todas as variáveis
+            let i, tabcontent, tablinks;
+
+            // Pega todos os elementos com class="tab-content" e os esconde
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+
+            // Pega todos os elementos com class="tab-button" e remove a classe "active"
+            tablinks = document.getElementsByClassName("tab-button");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].classList.remove("active");
+                tablinks[i].classList.remove("bg-blue-700");
+                tablinks[i].classList.add("bg-blue-600");
+            }
+
+            // Mostra a aba atual e adiciona a classe "active" ao botão que abriu a aba
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.classList.add("active");
+            evt.currentTarget.classList.remove("bg-blue-600");
+            evt.currentTarget.classList.add("bg-blue-700");
+
+            // Carrega os dados para a aba ativa
+            if (tabName === 'rdosConcluidos') {
+                loadRDOs();
+            } else if (tabName === 'agendamentos') {
+                loadAgendamentos();
+                loadPendingAgendamentos();
+            }
+        }
+
+        // --- Funções de Submissão de Formulários ---
+
+        // Submissão do formulário de Novo RDO
+        document.getElementById('rdoForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            showLoader('rdo-loader');
+
+            const form = event.target;
+            const formData = new FormData(form);
+
+            // Coleta dados da equipe
+            const equipe = [];
+            const nomesEquipe = form.querySelectorAll('input[name="nomeEquipe[]"]');
+            const funcoesEquipe = form.querySelectorAll('input[name="funcaoEquipe[]"]');
+            nomesEquipe.forEach((input, index) => {
+                equipe.push({ nome: input.value, funcao: funcoesEquipe[index].value });
             });
 
-            Promise.all(promises)
-                .then(fotos => {
-                    data.fotos = fotos;
-                    fetch(WEB_APP_URL, {
-                        method: 'POST',
-                        body: JSON.stringify(data),
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-                    })
-                    .then(response => response.json())
-                    .then(result => {
-                        document.getElementById('loader').style.display = 'none';
-                        if (result.success) {
-                            alert('Laudo salvo com sucesso! PDF: ' + result.pdfUrl);
-                        } else {
-                            alert('Erro: ' + result.message);
-                        }
-                    })
-                    .catch(error => {
-                        document.getElementById('loader').style.display = 'none';
-                        alert('Erro ao salvar RDO: ' + error.message);
-                    });
-                })
-                .catch(error => {
-                    document.getElementById('loader').style.display = 'none';
-                    alert('Erro ao processar fotos: ' + error);
-                });
-        }
+            // Processa fotos
+            const fotosInput = document.getElementById('fotos');
+            const files = Array.from(fotosInput.files);
+            if (files.length > 10) {
+                hideLoader('rdo-loader');
+                showMessageModal('Erro', 'Você pode enviar no máximo 10 fotos.');
+                return;
+            }
 
-        // Salvar agendamento
-        function salvarAgendamento() {
+            const processedPhotos = [];
+            for (const file of files) {
+                try {
+                    const base64 = await resizeAndConvertToBase64(file);
+                    processedPhotos.push(base64);
+                } catch (error) {
+                    hideLoader('rdo-loader');
+                    showMessageModal('Erro', 'Erro ao processar foto: ' + error.message);
+                    return;
+                }
+            }
+
             const data = {
-                action: 'salvarAgendamento',
-                unidade: document.getElementById('agendamento-unidade').value,
-                dataAgendamento: document.getElementById('agendamento-data').value,
-                descricao: document.getElementById('agendamento-descricao').value,
-                status: document.getElementById('agendamento-status').value
+                action: 'salvarRDO',
+                unidade: formData.get('unidade'),
+                data: formData.get('data'),
+                fiscal: formData.get('fiscal'),
+                equipe: JSON.stringify(equipe), // Armazena como string JSON
+                tarefasRealizadas: formData.get('tarefasRealizadas'),
+                ocorrencias: formData.get('ocorrencias'),
+                fotos: processedPhotos // Envia as fotos Base64 otimizadas
             };
 
-            fetch(WEB_APP_URL, {
-                method: 'POST',
-                body: JSON.stringify(data),
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-            })
-            .then(response => response.json())
-            .then(result => {
+            try {
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' } // Importante para Apps Script
+                });
+                const result = await response.json();
+
                 if (result.success) {
-                    alert('Agendamento salvo com sucesso!');
-                    document.getElementById('agendamento-unidade').value = '';
-                    document.getElementById('agendamento-data').value = '';
-                    document.getElementById('agendamento-descricao').value = '';
-                    loadAgendamentos();
+                    const actions = [
+                        { text: 'OK', onClick: () => { closeMessageModal(); form.reset(); loadRDOs(); } }
+                    ];
+                    if (result.pdfUrl) {
+                        actions.push({ text: 'Ver PDF', onClick: () => window.open(result.pdfUrl, '_blank') });
+                        if (navigator.share) {
+                            actions.push({ text: 'Compartilhar no WhatsApp', onClick: () => {
+                                navigator.share({
+                                    title: 'Laudo de Manutenção RDO ' + result.numeroRDO,
+                                    text: `Confira o Laudo de Manutenção RDO ${result.numeroRDO} da unidade ${data.unidade}:`,
+                                    url: result.pdfUrl
+                                }).catch(error => console.log('Erro ao compartilhar:', error));
+                            }});
+                        }
+                    }
+                    showMessageModal('Sucesso!', result.message, actions);
                 } else {
-                    alert('Erro: ' + result.message);
+                    showMessageModal('Erro', 'Erro ao salvar RDO: ' + result.message);
                 }
-            })
-            .catch(error => alert('Erro ao salvar agendamento: ' + error.message));
+            } catch (error) {
+                showMessageModal('Erro', 'Erro ao conectar com o servidor: ' + error.message);
+            } finally {
+                hideLoader('rdo-loader');
+            }
+        });
+
+        // Submissão do formulário de Edição de RDO
+        document.getElementById('editRDOForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            showLoader('edit-rdo-loader');
+
+            const form = event.target;
+            const formData = new FormData(form);
+
+            const numeroRDO = document.getElementById('edit-numeroRDO').value;
+
+            // Coleta dados da equipe editada
+            const equipe = [];
+            const nomesEquipe = form.querySelectorAll('#edit-equipe-container input[name="nomeEquipe[]"]');
+            const funcoesEquipe = form.querySelectorAll('#edit-equipe-container input[name="funcaoEquipe[]"]');
+            nomesEquipe.forEach((input, index) => {
+                equipe.push({ nome: input.value, funcao: funcoesEquipe[index].value });
+            });
+
+            // Processa novas fotos (se houver)
+            const newFotosInput = document.getElementById('edit-fotos');
+            const newFiles = Array.from(newFotosInput.files);
+            const processedNewPhotos = [];
+            for (const file of newFiles) {
+                try {
+                    const base64 = await resizeAndConvertToBase64(file);
+                    processedNewPhotos.push(base64);
+                } catch (error) {
+                    hideLoader('edit-rdo-loader');
+                    showMessageModal('Erro', 'Erro ao processar nova foto: ' + error.message);
+                    return;
+                }
+            }
+
+            // Combina fotos existentes (que não foram removidas) com as novas fotos
+            const allPhotosToSend = currentEditPhotos.concat(processedNewPhotos);
+
+            if (allPhotosToSend.length > 10) {
+                hideLoader('edit-rdo-loader');
+                showMessageModal('Erro', 'O número total de fotos (atuais + novas) não pode exceder 10.');
+                return;
+            }
+
+            const data = {
+                action: 'updateRDO',
+                numeroRDO: numeroRDO,
+                unidade: formData.get('unidade'),
+                data: formData.get('data'),
+                fiscal: formData.get('fiscal'),
+                equipe: JSON.stringify(equipe),
+                tarefasRealizadas: formData.get('tarefasRealizadas'),
+                ocorrencias: formData.get('ocorrencias'),
+                fotos: allPhotosToSend // Envia todas as fotos (existentes e novas)
+            };
+
+            try {
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessageModal('Sucesso!', result.message, [
+                        { text: 'OK', onClick: () => { closeMessageModal(); closeEditRDOModal(); loadRDOs(); } },
+                        { text: 'Ver PDF', onClick: () => window.open(result.pdfUrl, '_blank') }
+                    ]);
+                } else {
+                    showMessageModal('Erro', 'Erro ao atualizar RDO: ' + result.message);
+                }
+            } catch (error) {
+                showMessageModal('Erro', 'Erro ao conectar com o servidor: ' + error.message);
+            } finally {
+                hideLoader('edit-rdo-loader');
+            }
+        });
+
+
+        // Submissão do formulário de Agendamento
+        document.getElementById('agendamentoForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            showLoader('agendamento-loader');
+
+            const form = event.target;
+            const formData = new FormData(form);
+
+            const data = {
+                action: 'salvarAgendamento',
+                unidade: formData.get('unidade'),
+                dataAgendamento: formData.get('dataAgendamento'),
+                descricao: formData.get('descricao'),
+                status: formData.get('status')
+            };
+
+            try {
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessageModal('Sucesso!', result.message, [{ text: 'OK', onClick: () => { closeMessageModal(); form.reset(); loadAgendamentos(); loadPendingAgendamentos(); } }]);
+                } else {
+                    showMessageModal('Erro', 'Erro ao salvar agendamento: ' + result.message);
+                }
+            } catch (error) {
+                showMessageModal('Erro', 'Erro ao conectar com o servidor: ' + error.message);
+            } finally {
+                hideLoader('agendamento-loader');
+            }
+        });
+
+        // --- Funções de Carregamento e Renderização de Dados ---
+
+        // Carregar RDOs Concluídos
+        async function loadRDOs() {
+            showLoader('rdos-loader');
+            try {
+                const response = await fetch(`${WEB_APP_URL}?action=getListaRDOs`);
+                const result = await response.json();
+                if (result.success) {
+                    renderRDOs(result.data);
+                } else {
+                    showMessageModal('Erro', 'Erro ao carregar RDOs: ' + result.message);
+                    document.getElementById('rdos-list').innerHTML = `<p class="text-gray-600 col-span-full">${result.message}</p>`;
+                }
+            } catch (error) {
+                showMessageModal('Erro', 'Erro ao conectar com o servidor para carregar RDOs: ' + error.message);
+                document.getElementById('rdos-list').innerHTML = `<p class="text-gray-600 col-span-full">Erro ao carregar RDOs. Tente novamente mais tarde.</p>`;
+            } finally {
+                hideLoader('rdos-loader');
+            }
         }
 
-        // Carregar dados ao iniciar
+        // Renderizar RDOs Concluídos
+        function renderRDOs(rdos) {
+            const rdosList = document.getElementById('rdos-list');
+            rdosList.innerHTML = ''; // Limpa a lista existente
+
+            if (rdos.length === 0) {
+                rdosList.innerHTML = '<p class="text-gray-600 col-span-full">Nenhum RDO concluído encontrado.</p>';
+                return;
+            }
+
+            rdos.forEach(rdo => {
+                let equipeHtml = '';
+                try {
+                    const equipe = JSON.parse(rdo.equipe);
+                    equipeHtml = equipe.map(m => `<li>${m.nome} (${m.funcao})</li>`).join('');
+                } catch (e) {
+                    equipeHtml = `<li>Erro ao carregar equipe: ${rdo.equipe}</li>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = 'bg-white p-4 rounded-lg shadow-md border border-gray-200';
+                card.innerHTML = `
+                    <h3 class="text-lg font-bold text-blue-800 mb-2">RDO #${rdo.numeroRDO}</h3>
+                    <p class="text-gray-700 mb-1"><strong>Unidade:</strong> ${rdo.unidade}</p>
+                    <p class="text-gray-700 mb-1"><strong>Data:</strong> ${rdo.data}</p>
+                    <p class="text-gray-700 mb-1"><strong>Fiscal:</strong> ${rdo.fiscal}</p>
+                    <p class="text-gray-700 mb-1"><strong>Equipe:</strong></p>
+                    <ul class="list-disc list-inside text-gray-600 mb-2">
+                        ${equipeHtml}
+                    </ul>
+                    <p class="text-gray-700 mb-1"><strong>Tarefas:</strong> ${rdo.tarefasRealizadas}</p>
+                    <p class="text-gray-700 mb-4"><strong>Ocorrências:</strong> ${rdo.ocorrencias}</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="window.open('${rdo.pdfUrl}', '_blank')" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center">
+                            <i class="fas fa-file-pdf mr-2"></i> Ver PDF
+                        </button>
+                        <button onclick="showPhotosModal(${JSON.stringify(rdo.fotosUrls)})" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center">
+                            <i class="fas fa-image mr-2"></i> Ver Fotos
+                        </button>
+                        <button onclick="editRDO('${rdo.numeroRDO}')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center">
+                            <i class="fas fa-edit mr-2"></i> Editar
+                        </button>
+                        <button onclick="confirmDeleteRDO('${rdo.numeroRDO}')" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center">
+                            <i class="fas fa-trash-alt mr-2"></i> Excluir
+                        </button>
+                    </div>
+                `;
+                rdosList.appendChild(card);
+            });
+        }
+
+        // Função para buscar detalhes de um RDO específico para edição
+        async function editRDO(numeroRDO) {
+            showLoader('rdos-loader'); // Mostra loader enquanto busca os detalhes
+            try {
+                const response = await fetch(`${WEB_APP_URL}?action=getAgendamentoDetails&rdoNum=${numeroRDO}`);
+                const result = await response.json();
+                if (result.success && result.data) {
+                    openEditRDOModal(result.data);
+                } else {
+                    showMessageModal('Erro', 'Não foi possível carregar os detalhes do RDO para edição: ' + result.message);
+                }
+            } catch (error) {
+                showMessageModal('Erro', 'Erro ao buscar detalhes do RDO para edição: ' + error.message);
+            } finally {
+                hideLoader('rdos-loader');
+            }
+        }
+
+        // Função para confirmar exclusão de RDO
+        function confirmDeleteRDO(numeroRDO) {
+            showMessageModal('Confirmar Exclusão', `Tem certeza que deseja excluir o RDO #${numeroRDO}? Esta ação não pode ser desfeita após 10 minutos da criação.`, [
+                { text: 'Cancelar', onClick: closeMessageModal },
+                { text: 'Excluir', onClick: () => deleteRDO(numeroRDO) }
+            ]);
+        }
+
+        // Função para excluir RDO
+        async function deleteRDO(numeroRDO) {
+            closeMessageModal(); // Fecha o modal de confirmação
+            showLoader('rdos-loader');
+            try {
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'deleteRDO', numeroRDO: numeroRDO }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessageModal('Sucesso!', result.message, [{ text: 'OK', onClick: () => { closeMessageModal(); loadRDOs(); } }]);
+                } else {
+                    showMessageModal('Erro', 'Erro ao excluir RDO: ' + result.message);
+                }
+            } catch (error) {
+                showMessageModal('Erro', 'Erro ao conectar com o servidor para excluir RDO: ' + error.message);
+            } finally {
+                hideLoader('rdos-loader');
+            }
+        }
+
+
+        // Carregar Agendamentos
+        async function loadAgendamentos() {
+            showLoader('agendamentos-loader');
+            try {
+                const response = await fetch(`${WEB_APP_URL}?action=getAgendamentos`);
+                const result = await response.json();
+                if (result.success) {
+                    renderAgendamentos(result.data);
+                } else {
+                    showMessageModal('Erro', 'Erro ao carregar agendamentos: ' + result.message);
+                    document.getElementById('agendamentos-list').innerHTML = `<p class="text-gray-600 col-span-full">${result.message}</p>`;
+                }
+            } catch (error) {
+                showMessageModal('Erro', 'Erro ao conectar com o servidor para carregar agendamentos: ' + error.message);
+                document.getElementById('agendamentos-list').innerHTML = `<p class="text-gray-600 col-span-full">Erro ao carregar agendamentos. Tente novamente mais tarde.</p>`;
+            } finally {
+                hideLoader('agendamentos-loader');
+            }
+        }
+
+        // Renderizar Agendamentos
+        function renderAgendamentos(agendamentos) {
+            const agendamentosList = document.getElementById('agendamentos-list');
+            agendamentosList.innerHTML = ''; // Limpa a lista existente
+
+            if (agendamentos.length === 0) {
+                agendamentosList.innerHTML = '<p class="text-gray-600 col-span-full">Nenhum agendamento encontrado.</p>';
+                return;
+            }
+
+            agendamentos.forEach(agendamento => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-4 rounded-lg shadow-md border border-gray-200';
+                card.innerHTML = `
+                    <h3 class="text-lg font-bold text-blue-800 mb-2">Agendamento #${agendamento.numero}</h3>
+                    <p class="text-gray-700 mb-1"><strong>Unidade:</strong> ${agendamento.unidade}</p>
+                    <p class="text-gray-700 mb-1"><strong>Data Agendada:</strong> ${agendamento.dataAgendamento}</p>
+                    <p class="text-gray-700 mb-1"><strong>Descrição:</strong> ${agendamento.descricao}</p>
+                    <p class="text-gray-700 mb-1"><strong>Status:</strong> <span class="${agendamento.status === 'Urgente' ? 'text-red-600 font-bold' : 'text-green-600'}">${agendamento.status}</span></p>
+                    <p class="text-gray-700 text-sm">Criado em: ${agendamento.dataCriacao}</p>
+                `;
+                agendamentosList.appendChild(card);
+            });
+        }
+
+        // Carregar Agendamentos Pendentes (para alerta de urgência)
+        async function loadPendingAgendamentos() {
+            try {
+                const response = await fetch(`${WEB_APP_URL}?action=getPendingAgendamentos`);
+                const result = await response.json();
+                const alertDiv = document.getElementById('agendamento-urgente-alert');
+                if (result.success && result.data.length > 0) {
+                    alertDiv.classList.remove('hidden');
+                } else {
+                    alertDiv.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Erro ao verificar agendamentos pendentes:', error);
+                // Não mostra modal para este erro, apenas no console
+            }
+        }
+
+        // --- Inicialização ---
         document.addEventListener('DOMContentLoaded', () => {
-            loadRDOs();
-            loadAgendamentos();
-            loadPendingAgendamentos();
+            // Ativa a primeira aba por padrão
+            document.querySelector('.tab-button').click();
+            addEquipe(); // Adiciona o primeiro campo de mão de obra ao carregar a página
         });
     </script>
 </body>
