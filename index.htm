@@ -1,919 +1,394 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Manutenção CSL - SEMCAS</title>
     <style>
-        /* CSS Consolidado AQUI */
-        :root {
-            --primary-color: #007bff;
-            --secondary-color: #0056b3;
-            --background-color: #f4f4f4;
-            --container-bg-color: #fff;
-            --border-color: #ddd;
-            --urgent-color: #dc3545; /* Cor para urgência */
-            --urgent-bg: #f8d7da; /* Fundo para urgência */
-            --urgent-border: #f5c6cb; /* Borda para urgência */
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background-color: var(--background-color);
-            margin: 0;
-            padding: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-        }
-
-        .container {
-            background-color: var(--container-bg-color);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 900px;
-            box-sizing: border-box;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 15px;
-        }
-
-        .logo {
-            max-width: 100px;
-            height: auto;
-            margin-bottom: 10px;
-        }
-
-        h1 {
-            font-size: 20px;
-            margin-bottom: 5px;
-            color: var(--secondary-color);
-        }
-
-        p {
-            font-size: 13px;
-            line-height: 1.4;
-            color: #666;
-        }
-
-        /* Estilos das Abas */
-        #tabs {
-            display: flex;
-            justify-content: space-around;
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--border-color);
-        }
-
-        .tab-button {
-            background-color: transparent;
-            border: none;
-            padding: 10px 15px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            color: #666;
-            transition: color 0.3s, border-bottom 0.3s;
-            position: relative;
-        }
-
-        .tab-button.active {
-            color: var(--primary-color);
-            border-bottom: 3px solid var(--primary-color);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* Estilos do Formulário (Novo RDO) */
-        fieldset {
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
-        legend {
-            font-weight: bold;
-            color: var(--primary-color);
-            padding: 0 8px;
-            font-size: 14px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: bold;
-            color: #555;
-            font-size: 14px;
-        }
-
-        input[type="text"],
-        input[type="date"],
-        input[type="number"],
-        textarea,
-        select {
-            width: calc(100% - 20px);
-            padding: 10px;
-            margin-bottom: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 15px;
-        }
-        
-        button {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 15px;
-            transition: background-color 0.3s ease;
-            margin-top: 8px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        button:hover {
-            background-color: var(--secondary-color);
-        }
-
-        .equipe-item {
-            border: 1px dashed var(--border-color);
-            padding: 10px;
-            margin-bottom: 10px;
-            background-color: #f9f9f9;
-            border-radius: 5px;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 8px;
-            align-items: center;
-        }
-        @media (min-width: 600px) {
-            .equipe-item {
-                grid-template-columns: 1fr 1fr 50px auto;
-            }
-        }
-
-        .equipe-item label {
-            margin-bottom: 0;
-            display: inline-block;
-        }
-
-        .equipe-item input {
-            margin-bottom: 0;
-            width: 100%;
-        }
-
-        .removeEquipe {
-            background-color: #dc3545;
-            margin-top: 0;
-            padding: 8px 10px;
-            width: auto;
-        }
-
-        .removeEquipe:hover {
-            background-color: #c82333;
-        }
-        
-        #previewFotos {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
-            justify-content: center;
-        }
-
-        #previewFotos img {
-            max-width: 100px;
-            max-height: 100px;
-            border: 1px solid var(--border-color);
-            padding: 3px;
-            border-radius: 4px;
-            object-fit: cover;
-        }
-        @media (min-width: 600px) {
-            #previewFotos img {
-                max-width: 150px;
-                max-height: 150px;
-            }
-        }
-
-        #mensagemStatus, #mensagemAgendamentoStatus {
-            margin-top: 15px;
-            padding: 8px;
-            background-color: #e9f7ef;
-            border: 1px solid #d4edda;
-            color: #155724;
-            border-radius: 4px;
-            display: none;
-            font-size: 14px;
-            text-align: center;
-        }
-
-        #mensagemStatus.error, #mensagemAgendamentoStatus.error {
-            background-color: #f8d7da;
-            border-color: #f5c6cb;
-            color: #721c24;
-        }
-
-        /* Estilos para as novas abas */
-        .loading-text {
-            text-align: center;
-            font-style: italic;
-            color: #999;
-            padding: 20px;
-        }
-
-        .list-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: bold;
-            padding: 10px;
-            background-color: #f7f7f7;
-            border-bottom: 1px solid var(--border-color);
-            border-top-left-radius: 5px;
-            border-top-right-radius: 5px;
-        }
-        .rdo-item, .agendamento-item {
-            padding: 15px;
-            border-bottom: 1px solid var(--border-color);
-            display: grid;
-            gap: 10px;
-            position: relative;
-            cursor: pointer;
-        }
-        .rdo-item:last-child, .agendamento-item:last-child {
-            border-bottom: none;
-        }
-        .rdo-item:hover, .agendamento-item:hover {
-            background-color: #f9f9f9;
-        }
-        .rdo-item .data, .agendamento-item .data {
-            font-weight: bold;
-            font-size: 16px;
-        }
-        .rdo-item .unidade, .agendamento-item .unidade {
-            color: #555;
-            font-size: 14px;
-        }
-        .rdo-item .acoes, .agendamento-item .acoes {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            gap: 5px;
-        }
-        .rdo-item .acoes button, .agendamento-item .acoes button {
-            width: auto;
-            margin: 0;
-            padding: 8px 12px;
-            font-size: 13px;
-        }
-        
-        /* Layout de grid para os itens da lista em telas maiores */
-        @media (min-width: 768px) {
-            .rdo-item {
-                grid-template-columns: 0.5fr 1fr 2fr 1fr; /* Número RDO, Data, Unidade, Ações */
-            }
-            .rdo-item .acoes {
-                position: static;
-                transform: none;
-            }
-            .agendamento-item {
-                grid-template-columns: 0.5fr 1.5fr 2fr 1fr 1fr; /* Número, Data, Unidade, Descrição, Status, Ações */
-            }
-            .agendamento-item .acoes {
-                position: static;
-                transform: none;
-            }
-        }
-
-        /* Estilo para Agendamentos de Urgência */
-        .agendamento-item.urgencia {
-            background-color: var(--urgent-bg);
-            border-left: 5px solid var(--urgent-color);
-            font-weight: bold;
-        }
-        .agendamento-item.urgencia .data,
-        .agendamento-item.urgencia .unidade,
-        .agendamento-item.urgencia .descricao,
-        .agendamento-item.urgencia .status {
-            color: var(--urgent-color);
-        }
-
-        /* Notificação de Urgência */
-        #urgencyNotification {
-            background-color: var(--urgent-bg);
-            border: 1px solid var(--urgent-border);
-            color: var(--urgent-color);
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            text-align: center;
-            font-weight: bold;
-            display: none; /* Escondido por padrão */
-        }
-
-        /* Modal para visualização de fotos */
-        .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 1; /* Sit on top */
-            left: 0;
-            top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgba(0,0,0,0.8); /* Black w/ opacity */
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            margin: auto;
-            display: block;
-            max-width: 90%;
-            max-height: 90%;
-            object-fit: contain; /* Ensure image fits */
-        }
-
-        .close-modal {
-            position: absolute;
-            top: 15px;
-            right: 35px;
-            color: #f1f1f1;
-            font-size: 40px;
-            font-weight: bold;
-            transition: 0.3s;
-            cursor: pointer;
-        }
-
-        .close-modal:hover,
-        .close-modal:focus {
-            color: #bbb;
-            text-decoration: none;
-            cursor: pointer;
-        }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header img { max-width: 100px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .tab-button.active { background: #0056b3; }
+        .tab-content { display: none; background: white; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .tab-content.active { display: block; }
+        .form-section { margin-bottom: 20px; }
+        .form-section h2 { margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .equipe-container { margin-bottom: 10px; border: 1px solid #ddd; padding: 10px; border-radius: 4px; }
+        .remove-btn { background: #dc3545; color: white; border: none; padding: 5px 10px; cursor: pointer; }
+        .add-btn { background: #28a745; color: white; border: none; padding: 8px 15px; cursor: pointer; }
+        .submit-btn { background: #007bff; color: white; border: none; padding: 10px 20px; cursor: pointer; }
+        .alert { background: #ffc107; padding: 10px; border-radius: 4px; margin-bottom: 20px; display: none; }
+        .list-container div { padding: 10px; border-bottom: 1px solid #ddd; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 15% auto; padding: 20px; width: 80%; max-width: 600px; border-radius: 5px; }
+        .close-btn { float: right; font-size: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <img src="https://www.saoluis.ma.gov.br/img/logo_mobile.png?1738946184" alt="Logo SEMCAS" class="logo">
-            <h1>Sistema de Manutenção CSL - SEMCAS</h1>
-            <p>PREFEITURA MUNICIPAL DE SÃO LUÍS</p>
-            <p>SECRETARIA MUNICIPAL DA CRIANÇA E ASSISTÊNCIA SOCIAL - SEMCAS</p>
-            <p>COORDENAÇÃO DE SUPORTE TRANSPORTE E LOGÍSTICA - CSL</p>
-        </header>
+    <div class="header">
+        <img src="https://www.saoluis.ma.gov.br/img/logo_mobile.png?1738946184" alt="Logo SEMCAS">
+        <h1>Sistema de Manutenção CSL - SEMCAS</h1>
+        <p>PREFEITURA MUNICIPAL DE SÃO LUÍS</p>
+        <p>SECRETARIA MUNICIPAL DA CRIANÇA E ASSISTÊNCIA SOCIAL - SEMCAS</p>
+        <p>COORDENAÇÃO DE SUPORTE TRANSPORTE E LOGÍSTICA - CSL</p>
+    </div>
 
-        <div id="tabs">
-            <button class="tab-button active" onclick="showTab('tabNovoRDO')">Novo RDO</button>
-            <button class="tab-button" onclick="showTab('tabRDOsConcluidos')">RDOs Concluídos</button>
-            <button class="tab-button" onclick="showTab('tabAgendamentos')">Agendamentos</button>
+    <div class="tabs">
+        <button class="tab-button active" onclick="openTab('novo-rdo')">Novo RDO</button>
+        <button class="tab-button" onclick="openTab('rdos-concluidos')">RDOs Concluídos</button>
+        <button class="tab-button" onclick="openTab('agendamentos')">Agendamentos</button>
+    </div>
+
+    <div id="novo-rdo" class="tab-content active">
+        <h2>Novo Relatório Diário de Obras</h2>
+        <div class="form-section">
+            <h3>Opções de RDO</h3>
+            <div class="form-group">
+                <label>Tipo de RDO:</label>
+                <select id="rdo-type" onchange="toggleRdoType()">
+                    <option value="novo">Criar Novo (Emergência)</option>
+                    <option value="agendamento">A partir de Agendamento</option>
+                </select>
+                <select id="agendamento-select" style="display: none; margin-top: 10px;"></select>
+            </div>
         </div>
-
-        <div id="tabNovoRDO" class="tab-content active">
-            <h2>Novo Relatório Diário de Obras</h2>
-            <form id="laudoForm">
-                <fieldset>
-                    <legend>Opções de RDO</legend>
-                    <label for="tipoRDO">Tipo de RDO:</label>
-                    <select id="tipoRDO" name="tipoRDO">
-                        <option value="novo">Criar Novo (Emergência)</option>
-                    </select>
-                </fieldset>
-
-                <fieldset>
-                    <legend>Dados Gerais</legend>
-                    <label for="data">Data:</label>
-                    <input type="date" id="data" name="data" required>
-
-                    <label for="unidade">Nome da Unidade:</label>
-                    <input type="text" id="unidade" name="unidade" placeholder="Ex: Creche Modelo" required>
-                    
-                    <label for="fiscal">Fiscal:</label>
-                    <input type="text" id="fiscal" name="fiscal" value="Cleyton Jorge Dias" required>
-                </fieldset>
-
-                <fieldset>
-                    <legend>Mão de Obra</legend>
-                    <div id="equipeContainer">
-                        <div class="equipe-item">
-                            <label for="nome1">Nome:</label>
-                            <input type="text" id="nome1" name="nomeEquipe[]" placeholder="Nome Completo">
-                            <label for="funcao1">Função / Cargo:</label>
-                            <input type="text" id="funcao1" name="funcaoEquipe[]" placeholder="Ex: Técnico de Manutenção">
-                            <label for="qtd1">Qtd:</label>
-                            <input type="number" id="qtd1" name="qtdEquipe[]" value="1" min="1">
-                            <button type="button" class="removeEquipe">Remover</button>
-                        </div>
+        <div class="form-section">
+            <h3>Dados Gerais</h3>
+            <div class="form-group">
+                <label>Data:</label>
+                <input type="date" id="data">
+            </div>
+            <div class="form-group">
+                <label>Nome da Unidade:</label>
+                <input type="text" id="unidade">
+            </div>
+            <div class="form-group">
+                <label>Fiscal:</label>
+                <input type="text" id="fiscal">
+            </div>
+        </div>
+        <div class="form-section">
+            <h3>Mão de Obra</h3>
+            <div id="equipe-container">
+                <div class="equipe-container">
+                    <div class="form-group">
+                        <label>Nome:</label>
+                        <input type="text" class="equipe-nome">
                     </div>
-                    <button type="button" id="addEquipe">Adicionar Mais Mão de Obra</button>
-                </fieldset>
-
-                <fieldset>
-                    <legend>Tarefas Realizadas</legend>
-                    <textarea id="tarefas" name="tarefasRealizadas" rows="5" placeholder="Descreva as tarefas realizadas..."></textarea>
-                </fieldset>
-
-                <fieldset>
-                    <legend>Ocorrências</legend>
-                    <textarea id="ocorrencias" name="ocorrencias" rows="3" placeholder="Registre quaisquer ocorrências ou observações..."></textarea>
-                </fieldset>
-
-                <fieldset>
-                    <legend>Fotos da Manutenção</legend>
-                    <input type="file" id="fotos" name="fotos[]" accept="image/*" multiple capture="camera">
-                    <div id="previewFotos"></div>
-                </fieldset>
-
-                <button type="submit">Gerar Laudo e Salvar</button>
-                <p id="mensagemStatus"></p>
-            </form>
+                    <div class="form-group">
+                        <label>Função / Cargo:</label>
+                        <input type="text" class="equipe-funcao">
+                    </div>
+                    <div class="form-group">
+                        <label>Qtd:</label>
+                        <input type="number" class="equipe-qtd" min="1">
+                    </div>
+                    <button class="remove-btn" onclick="removeEquipe(this)">Remover</button>
+                </div>
+            </div>
+            <button class="add-btn" onclick="addEquipe()">Adicionar Mais Mão de Obra</button>
         </div>
-
-        <div id="tabRDOsConcluidos" class="tab-content">
-            <h2>Relatórios de Obras Concluídos</h2>
-            <div id="listaRdos" class="list-container">
-                <p class="loading-text">Carregando relatórios...</p>
+        <div class="form-section">
+            <h3>Tarefas Realizadas</h3>
+            <div class="form-group">
+                <textarea id="tarefas" rows="5"></textarea>
             </div>
         </div>
-
-        <div id="tabAgendamentos" class="tab-content">
-            <h2>Agendamentos de Manutenção</h2>
-            <div id="urgencyNotification">
-                <p>⚠️ **ATENÇÃO:** Existem agendamentos com status de **Urgência**!</p>
+        <div class="form-section">
+            <h3>Ocorrências</h3>
+            <div class="form-group">
+                <textarea id="ocorrencias" rows="5"></textarea>
             </div>
-            <div id="agendamentoFormContainer">
-                <form id="agendamentoForm">
-                    <fieldset>
-                        <legend>Novo Agendamento</legend>
-                        <label for="agendamento-unidade">Nome da Unidade:</label>
-                        <input type="text" id="agendamento-unidade" name="agendamentoUnidade" placeholder="Ex: Creche Modelo" required>
-                        
-                        <label for="agendamento-data">Data Agendada:</label>
-                        <input type="date" id="agendamento-data" name="agendamentoData" required>
-
-                        <label for="agendamento-descricao">Descrição do Serviço:</label>
-                        <textarea id="agendamento-descricao" name="agendamentoDescricao" rows="3" required></textarea>
-
-                        <label for="agendamento-status">Status:</label>
-                        <select id="agendamento-status" name="agendamentoStatus">
-                            <option value="Normal">Normal</option>
-                            <option value="Urgencia">Urgência</option>
-                        </select>
-                    </fieldset>
-                    <button type="submit">Salvar Agendamento</button>
-                    <p id="mensagemAgendamentoStatus"></p>
-                </form>
+        </div>
+        <div class="form-section">
+            <h3>Fotos da Manutenção</h3>
+            <div class="form-group">
+                <input type="file" id="fotos" multiple accept="image/*">
             </div>
-            <hr>
-            <h3>Lista de Agendamentos</h3>
-            <div id="listaAgendamentos" class="list-container">
-                <p class="loading-text">Carregando agendamentos...</p>
+        </div>
+        <button class="submit-btn" onclick="salvarRDO()">Gerar Laudo e Salvar</button>
+    </div>
+
+    <div id="rdos-concluidos" class="tab-content">
+        <h2>Relatórios de Obras Concluídos</h2>
+        <div id="rdos-list">Carregando relatórios...</div>
+    </div>
+
+    <div id="agendamentos" class="tab-content">
+        <h2>Agendamentos de Manutenção</h2>
+        <div id="alert-urgencia" class="alert">⚠️ <strong>ATENÇÃO:</strong> Existem agendamentos com status de <strong>Urgência</strong>!</div>
+        <div class="form-section">
+            <h3>Novo Agendamento</h3>
+            <div class="form-group">
+                <label>Nome da Unidade:</label>
+                <input type="text" id="agendamento-unidade">
             </div>
+            <div class="form-group">
+                <label>Data Agendada:</label>
+                <input type="date" id="agendamento-data">
+            </div>
+            <div class="form-group">
+                <label>Descrição do Serviço:</label>
+                <textarea id="agendamento-descricao" rows="5"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Status:</label>
+                <select id="agendamento-status">
+                    <option value="Normal">Normal</option>
+                    <option value="Urgência">Urgência</option>
+                </select>
+            </div>
+            <button class="submit-btn" onclick="salvarAgendamento()">Salvar Agendamento</button>
+        </div>
+        <h3>Lista de Agendamentos</h3>
+        <div id="agendamentos-list">Carregando agendamentos...</div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">×</span>
+            <div id="modal-content"></div>
         </div>
     </div>
 
-    <!-- Modal para visualização de fotos -->
-    <div id="photoModal" class="modal">
-        <span class="close-modal">&times;</span>
-        <div id="modalContent" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;"></div>
-    </div>
-    
     <script>
-        // JavaScript Consolidado AQUI
-        document.addEventListener('DOMContentLoaded', () => {
-            const laudoForm = document.getElementById('laudoForm');
-            const equipeContainer = document.getElementById('equipeContainer');
-            const addEquipeBtn = document.getElementById('addEquipe');
-            const fotosInput = document.getElementById('fotos');
-            const previewFotosDiv = document.getElementById('previewFotos');
-            const mensagemStatus = document.getElementById('mensagemStatus');
-            const tipoRDOSelect = document.getElementById('tipoRDO');
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbz9rjeJXmkwRSLn-UXGJodVhqE5qT5p7RS1C4FEjKVWmNCvyOqbqA1LD0CHqHPxSaHX1w/exec';
 
-            const agendamentoForm = document.getElementById('agendamentoForm');
-            const mensagemAgendamentoStatus = document.getElementById('mensagemAgendamentoStatus');
-            const urgencyNotification = document.getElementById('urgencyNotification');
-            
-            // ATENÇÃO: SUBSTITUA PELA URL DE IMPLANTAÇÃO DO SEU GOOGLE APPS SCRIPT
-            // Exemplo: 'https://script.google.com/macros/s/AKfycbz.../exec'
-            const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbz9rjeJXmkwRSLn-UXGJodVhqE5qT5p7RS1C4FEjKVWmNCvyOqbqA1LD0CHqHPxSaHX1w/exec'; 
+        // Função para abrir abas
+        function openTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.querySelector(`[onclick="openTab('${tabId}')"]`).classList.add('active');
 
-            const photoModal = document.getElementById('photoModal');
-            const modalContent = document.getElementById('modalContent');
-            const closeModal = document.querySelector('.close-modal');
+            if (tabId === 'rdos-concluidos') loadRDOs();
+            if (tabId === 'agendamentos') loadAgendamentos();
+        }
 
-            closeModal.onclick = function() {
-                photoModal.style.display = 'none';
-                modalContent.innerHTML = ''; // Clear images
+        // Carregar agendamentos pendentes no select
+        function loadPendingAgendamentos() {
+            fetch(`${WEB_APP_URL}?action=getPendingAgendamentos`)
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById('agendamento-select');
+                    select.innerHTML = '<option value="">Selecione um agendamento</option>';
+                    data.forEach(ag => {
+                        select.innerHTML += `<option value="${ag.numeroRDO}">${ag.numeroRDO} - ${ag.unidade} (${ag.dataAgendamento})</option>`;
+                    });
+                })
+                .catch(error => console.error('Erro ao carregar agendamentos pendentes:', error));
+        }
+
+        // Alternar tipo de RDO
+        function toggleRdoType() {
+            const rdoType = document.getElementById('rdo-type').value;
+            const agendamentoSelect = document.getElementById('agendamento-select');
+            if (rdoType === 'agendamento') {
+                agendamentoSelect.style.display = 'block';
+                loadPendingAgendamentos();
+            } else {
+                agendamentoSelect.style.display = 'none';
             }
+        }
 
-            window.onclick = function(event) {
-                if (event.target == photoModal) {
-                    photoModal.style.display = 'none';
-                    modalContent.innerHTML = ''; // Clear images
-                }
-            }
+        // Adicionar mão de obra
+        function addEquipe() {
+            const container = document.getElementById('equipe-container');
+            const div = document.createElement('div');
+            div.className = 'equipe-container';
+            div.innerHTML = `
+                <div class="form-group">
+                    <label>Nome:</label>
+                    <input type="text" class="equipe-nome">
+                </div>
+                <div class="form-group">
+                    <label>Função / Cargo:</label>
+                    <input type="text" class="equipe-funcao">
+                </div>
+                <div class="form-group">
+                    <label>Qtd:</label>
+                    <input type="number" class="equipe-qtd" min="1">
+                </div>
+                <button class="remove-btn" onclick="removeEquipe(this)">Remover</button>
+            `;
+            container.appendChild(div);
+        }
 
-            // Lógica para navegação entre abas
-            window.showTab = async function(tabId) {
-                document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
-                document.getElementById(tabId).style.display = 'block';
-                document.querySelectorAll('.tab-button').forEach(button => button.classList.remove('active'));
-                document.querySelector(`[onclick="showTab('${tabId}')"]`).classList.add('active');
+        // Remover mão de obra
+        function removeEquipe(btn) {
+            btn.parentElement.remove();
+        }
 
-                // Carrega dados se for a aba de listas
-                if (tabId === 'tabNovoRDO') {
-                    await carregarAgendamentosPendentesParaRDO();
-                } else if (tabId === 'tabRDOsConcluidos') {
-                    await carregarRdosConcluidos();
-                } else if (tabId === 'tabAgendamentos') {
-                    await carregarAgendamentos();
-                }
-            };
-            
-            let equipeCount = 1;
-
-            addEquipeBtn.addEventListener('click', () => {
-                equipeCount++;
-                const newEquipeItem = document.createElement('div');
-                newEquipeItem.classList.add('equipe-item');
-                newEquipeItem.innerHTML = `
-                    <label for="nome${equipeCount}">Nome:</label>
-                    <input type="text" id="nome${equipeCount}" name="nomeEquipe[]" placeholder="Nome Completo">
-                    <label for="funcao${equipeCount}">Função / Cargo:</label>
-                    <input type="text" id="funcao${equipeCount}" name="funcaoEquipe[]" placeholder="Ex: Técnico de Manutenção">
-                    <label for="qtd${equipeCount}">Qtd:</label>
-                    <input type="number" id="qtd${equipeCount}" name="qtdEquipe[]" value="1" min="1">
-                    <button type="button" class="removeEquipe">Remover</button>
-                `;
-                equipeContainer.appendChild(newEquipeItem);
-            });
-            equipeContainer.addEventListener('click', (e) => {
-                if (e.target.classList.contains('removeEquipe')) {
-                    e.target.closest('.equipe-item').remove();
-                }
-            });
-            fotosInput.addEventListener('change', (event) => {
-                previewFotosDiv.innerHTML = '';
-                const files = event.target.files;
-                if (files) {
-                    Array.from(files).forEach(file => {
-                        if (file.type.startsWith('image/')) {
-                            const reader = new FileReader();
-                            reader.onload = (e) => {
-                                const img = document.createElement('img');
-                                img.src = e.target.result;
-                                previewFotosDiv.appendChild(img);
-                            };
-                            reader.readAsDataURL(file);
-                        }
+        // Carregar RDOs
+        function loadRDOs() {
+            fetch(`${WEB_APP_URL}?action=getListaRDOs`)
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('rdos-list');
+                    container.innerHTML = '';
+                    data.forEach(rdo => {
+                        container.innerHTML += `
+                            <div>
+                                Nº ${rdo.numeroRDO} - ${rdo.unidade} (${rdo.data})
+                                <a href="${rdo.pdfUrl}" target="_blank">Ver PDF</a>
+                                <button onclick="showFotos(['${rdo.fotosUrls.join("','")}'])">Ver Fotos</button>
+                            </div>
+                        `;
                     });
-                }
-            });
-
-            tipoRDOSelect.addEventListener('change', async (event) => {
-                const selectedRdoNum = event.target.value;
-                if (selectedRdoNum === 'novo') {
-                    laudoForm.reset();
-                    previewFotosDiv.innerHTML = '';
-                    document.getElementById('fiscal').value = 'Cleyton Jorge Dias';
-                } else {
-                    try {
-                        const response = await fetch(`${GAS_WEB_APP_URL}?action=getAgendamentoDetails&rdoNum=${selectedRdoNum}`);
-                        // Check if the response is ok (status 200-299)
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-                        }
-                        const agendamento = await response.json(); 
-
-                        if (agendamento && agendamento.unidade) {
-                            document.getElementById('unidade').value = agendamento.unidade;
-                            document.getElementById('tarefas').value = agendamento.descricao || '';
-                        } else {
-                            console.error('Agendamento não encontrado ou dados incompletos.');
-                            mensagemStatus.textContent = 'Agendamento não encontrado ou dados incompletos.';
-                            mensagemStatus.classList.add('error');
-                            mensagemStatus.style.display = 'block';
-                            laudoForm.reset();
-                            previewFotosDiv.innerHTML = '';
-                            document.getElementById('fiscal').value = 'Cleyton Jorge Dias';
-                        }
-                    } catch (error) {
-                        console.error('Erro ao buscar detalhes do agendamento:', error);
-                        if (error instanceof TypeError && error.message.includes('NetworkError')) {
-                            mensagemStatus.textContent = 'Erro de conexão de rede ou problema de CORS ao carregar agendamento. Por favor, verifique se a URL do Google Apps Script está correta e se a implantação está configurada para "Qualquer pessoa" (Anyone).';
-                        } else {
-                            mensagemStatus.textContent = `Erro ao carregar detalhes do agendamento: ${error.message}. Tente novamente.`;
-                        }
-                        mensagemStatus.classList.add('error');
-                        mensagemStatus.style.display = 'block';
-                        laudoForm.reset();
-                        previewFotosDiv.innerHTML = '';
-                        document.getElementById('fiscal').value = 'Cleyton Jorge Dias';
-                    }
-                }
-            });
-
-            laudoForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                mensagemStatus.style.display = 'none';
-                mensagemStatus.classList.remove('error');
-                mensagemStatus.textContent = 'Enviando laudo...';
-                mensagemStatus.style.display = 'block';
-
-                const formData = new FormData(laudoForm);
-                const data = {};
-                data.action = 'salvarRDO';
-                data.rdoAgendamentoNum = tipoRDOSelect.value === 'novo' ? '' : tipoRDOSelect.value;
-                
-                data.data = formData.get('data');
-                data.unidade = formData.get('unidade');
-                data.fiscal = formData.get('fiscal');
-                data.tarefasRealizadas = formData.get('tarefasRealizadas');
-                data.ocorrencias = formData.get('ocorrencias');
-
-                data.equipe = [];
-                const nomesEquipe = formData.getAll('nomeEquipe[]');
-                const funcoesEquipe = formData.getAll('funcaoEquipe[]');
-                const qtdsEquipe = formData.getAll('qtdEquipe[]');
-
-                for (let i = 0; i < nomesEquipe.length; i++) {
-                    if (nomesEquipe[i]) {
-                        data.equipe.push({
-                            nome: nomesEquipe[i],
-                            funcao: funcoesEquipe[i],
-                            qtd: parseInt(qtdsEquipe[i] || 1)
-                        });
-                    }
-                }
-
-                data.fotos = [];
-                const fotoFiles = fotosInput.files;
-                const fotoPromises = Array.from(fotoFiles).map(file => {
-                    return new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => resolve(e.target.result);
-                        reader.readAsDataURL(file);
-                    });
-                });
-                data.fotos = await Promise.all(fotoPromises);
-
-                try {
-                    const response = await fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify(data),
-                    });
-                    // Check if the response is ok (status 200-299)
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-                    }
-                    const result = await response.json(); 
-
-                    if (result.success) {
-                        mensagemStatus.textContent = 'Laudo enviado com sucesso! O PDF foi gerado e salvo no Google Drive.';
-                        mensagemStatus.style.backgroundColor = '#d4edda';
-                        mensagemStatus.style.borderColor = '#c3e6cb';
-                        mensagemStatus.style.color = '#155724';
-                        laudoForm.reset();
-                        previewFotosDiv.innerHTML = '';
-                        document.getElementById('fiscal').value = 'Cleyton Jorge Dias';
-                        await carregarAgendamentosPendentesParaRDO();
-                        await carregarRdosConcluidos(); 
-                    } else {
-                        mensagemStatus.textContent = `Erro ao enviar o laudo: ${result.message}`;
-                        mensagemStatus.classList.add('error');
-                    }
-                } catch (error) {
-                    console.error('Erro ao enviar o laudo:', error);
-                    if (error instanceof TypeError && error.message.includes('NetworkError')) {
-                        mensagemStatus.textContent = 'Erro de conexão de rede ou problema de CORS. Por favor, verifique se a URL do Google Apps Script está correta e se a implantação está configurada para "Qualquer pessoa" (Anyone).';
-                    } else {
-                        mensagemStatus.textContent = `Erro ao enviar o laudo: ${error.message}. Verifique o console para mais detalhes.`;
-                    }
-                    mensagemStatus.classList.add('error');
-                }
-            });
-
-            agendamentoForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                mensagemAgendamentoStatus.style.display = 'none';
-                mensagemAgendamentoStatus.classList.remove('error');
-                mensagemAgendamentoStatus.textContent = 'Salvando agendamento...';
-                mensagemAgendamentoStatus.style.display = 'block';
-
-                const formData = new FormData(agendamentoForm);
-                const data = {
-                    action: 'salvarAgendamento',
-                    unidade: formData.get('agendamentoUnidade'),
-                    dataAgendamento: formData.get('agendamentoData'),
-                    descricao: formData.get('agendamentoDescricao'),
-                    status: formData.get('agendamentoStatus')
-                };
-                
-                try {
-                    const response = await fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify(data),
-                    });
-                    // Check if the response is ok (status 200-299)
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-                    }
-                    const result = await response.json(); 
-
-                    if (result.success) {
-                        mensagemAgendamentoStatus.textContent = 'Agendamento salvo com sucesso!';
-                        mensagemAgendamentoStatus.style.backgroundColor = '#d4edda';
-                        mensagemAgendamentoStatus.style.borderColor = '#c3e6cb';
-                        mensagemAgendamentoStatus.style.color = '#155724';
-                        agendamentoForm.reset();
-                        await carregarAgendamentos();
-                    } else {
-                        mensagemAgendamentoStatus.textContent = `Erro ao salvar agendamento: ${result.message}`;
-                        mensagemAgendamentoStatus.classList.add('error');
-                    }
-                } catch (error) {
-                    console.error('Erro ao salvar agendamento:', error);
-                    if (error instanceof TypeError && error.message.includes('NetworkError')) {
-                        mensagemAgendamentoStatus.textContent = 'Erro de conexão de rede ou problema de CORS. Por favor, verifique se a URL do Google Apps Script está correta e se a implantação está configurada para "Qualquer pessoa" (Anyone).';
-                    } else {
-                        mensagemAgendamentoStatus.textContent = `Erro ao salvar agendamento: ${error.message}. Verifique o console para mais detalhes.`;
-                    }
-                    mensagemAgendamentoStatus.classList.add('error');
-                }
-            });
-
-            async function carregarRdosConcluidos() {
-                const listaRdos = document.getElementById('listaRdos');
-                listaRdos.innerHTML = '<p class="loading-text">Carregando relatórios...</p>';
-                try {
-                    const response = await fetch(GAS_WEB_APP_URL + '?action=getListaRDOs');
-                    // Check if the response is ok (status 200-299)
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-                    }
-                    const rdos = await response.json(); 
-                    
-                    listaRdos.innerHTML = '';
-                    if (rdos.length > 0) {
-                        rdos.forEach(rdo => {
-                            const rdoItem = document.createElement('div');
-                            rdoItem.classList.add('rdo-item');
-                            rdoItem.innerHTML = `
-                                <div class="numero">#${rdo.numeroRDO}</div>
-                                <div class="data">${rdo.data}</div>
-                                <div class="unidade">${rdo.unidade}</div>
-                                <div class="acoes">
-                                    <a href="${rdo.pdfUrl}" target="_blank"><button>Ver PDF</button></a>
-                                    <button onclick="viewRDOPhotos('${rdo.numeroRDO}', '${rdo.fotosUrls}')">Ver Fotos</button>
-                                </div>
-                            `;
-                            listaRdos.appendChild(rdoItem);
-                        });
-                    } else {
-                        listaRdos.innerHTML = '<p class="loading-text">Nenhum relatório concluído.</p>';
-                    }
-                } catch (error) {
+                })
+                .catch(error => {
                     console.error('Erro ao carregar RDOs:', error);
-                    if (error instanceof TypeError && error.message.includes('NetworkError')) {
-                        listaRdos.innerHTML = '<p class="loading-text error">Erro de conexão de rede ou problema de CORS ao carregar relatórios. Verifique a implantação do Apps Script.</p>';
-                    } else {
-                        listaRdos.innerHTML = `<p class="loading-text error">Erro ao carregar relatórios: ${error.message}.</p>`;
-                    }
-                }
-            }
+                    document.getElementById('rdos-list').innerHTML = 'Erro ao carregar relatórios.';
+                });
+        }
 
-            // Função para abrir o modal de fotos
-            window.viewRDOPhotos = function(rdoNum, fotosUrlsString) {
-                modalContent.innerHTML = ''; // Limpa conteúdo anterior
-                const fotosUrls = fotosUrlsString.split(','); // Divide a string de URLs
-
-                if (fotosUrls.length > 0 && fotosUrls[0] !== '') {
-                    fotosUrls.forEach(url => {
-                        const img = document.createElement('img');
-                        img.src = url.trim(); // Remove espaços em branco
-                        img.style.maxWidth = '300px'; // Tamanho máximo para as fotos no modal
-                        img.style.maxHeight = '300px';
-                        img.style.objectFit = 'contain';
-                        img.style.border = '1px solid #ccc';
-                        img.style.borderRadius = '5px';
-                        modalContent.appendChild(img);
+        // Carregar agendamentos
+        function loadAgendamentos() {
+            fetch(`${WEB_APP_URL}?action=getAgendamentos`)
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('agendamentos-list');
+                    container.innerHTML = '';
+                    const hasUrgencia = data.some(ag => ag.status === 'Urgência');
+                    document.getElementById('alert-urgencia').style.display = hasUrgencia ? 'block' : 'none';
+                    data.forEach(ag => {
+                        container.innerHTML += `
+                            <div>
+                                Nº ${ag.numeroRDO} - ${ag.unidade} (${ag.dataAgendamento}) - ${ag.status}
+                            </div>
+                        `;
                     });
-                } else {
-                    modalContent.innerHTML = '<p style="color: white;">Nenhuma foto disponível para este RDO.</p>';
-                }
-                photoModal.style.display = 'flex'; // Mostra o modal
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar agendamentos:', error);
+                    document.getElementById('agendamentos-list').innerHTML = 'Erro ao carregar agendamentos.';
+                });
+        }
+
+        // Mostrar fotos em modal
+        function showFotos(urls) {
+            const modal = document.getElementById('modal');
+            const content = document.getElementById('modal-content');
+            content.innerHTML = urls.map(url => `<img src="${url}" style="max-width: 100px; margin: 5px;">`).join('');
+            modal.style.display = 'block';
+        }
+
+        // Fechar modal
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        // Salvar RDO
+        function salvarRDO() {
+            const rdoType = document.getElementById('rdo-type').value;
+            const data = {
+                action: 'salvarRDO',
+                data: document.getElementById('data').value,
+                unidade: document.getElementById('unidade').value,
+                fiscal: document.getElementById('fiscal').value,
+                equipe: Array.from(document.querySelectorAll('.equipe-container')).map(container => ({
+                    nome: container.querySelector('.equipe-nome').value,
+                    funcao: container.querySelector('.equipe-funcao').value,
+                    qtd: container.querySelector('.equipe-qtd').value
+                })),
+                tarefasRealizadas: document.getElementById('tarefas').value,
+                ocorrencias: document.getElementById('ocorrencias').value,
+                fotos: [],
+                rdoAgendamentoNum: rdoType === 'agendamento' ? document.getElementById('agendamento-select').value : ''
             };
 
+            if (!data.data || !data.unidade || !data.fiscal || !data.tarefasRealizadas) {
+                alert('Preencha todos os campos obrigatórios.');
+                return;
+            }
 
-            async function carregarAgendamentos() {
-                const listaAgendamentos = document.getElementById('listaAgendamentos');
-                listaAgendamentos.innerHTML = '<p class="loading-text">Carregando agendamentos...</p>';
-                urgencyNotification.style.display = 'none';
+            const files = document.getElementById('fotos').files;
+            const promises = Array.from(files).map(file => {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.readAsDataURL(file);
+                });
+            });
 
-                let hasUrgency = false;
-
-                try {
-                    const response = await fetch(GAS_WEB_APP_URL + '?action=getAgendamentos');
-                    // Check if the response is ok (status 200-299)
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-                    }
-                    const agendamentos = await response.json(); 
-
-                    listaAgendamentos.innerHTML = '';
-                    if (agendamentos.length > 0) {
-                        agendamentos.forEach(agendamento => {
-                            const agendamentoItem = document.createElement('div');
-                            agendamentoItem.classList.add('agendamento-item');
-                            if (agendamento.status === 'Urgencia') {
-                                agendamentoItem.classList.add('urgencia');
-                                hasUrgency = true;
-                            }
-                            agendamentoItem.innerHTML = `
-                                <div class="numero">#${agendamento.numeroRDO}</div>
-                                <div class="data">${agendamento.dataAgendamento}</div>
-                                <div class="unidade">${agendamento.unidade}</div>
-                                <div class="descricao">${agendamento.descricao}</div>
-                                <div class="status">${agendamento.status}</div>
-                                <div class="acoes">
-                                    <!-- Futuras ações como editar ou marcar como concluído -->
+            Promise.all(promises)
+                .then(fotos => {
+                    data.fotos = fotos;
+                    fetch(WEB_APP_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(data),
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            alert('Laudo salvo com sucesso! PDF: ' + result.pdfUrl);
+                            document.querySelector('form').reset(); // Ajuste se necessário
+                            document.getElementById('equipe-container').innerHTML = `
+                                <div class="equipe-container">
+                                    <div class="form-group">
+                                        <label>Nome:</label>
+                                        <input type="text" class="equipe-nome">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Função / Cargo:</label>
+                                        <input type="text" class="equipe-funcao">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Qtd:</label>
+                                        <input type="number" class="equipe-qtd" min="1">
+                                    </div>
+                                    <button class="remove-btn" onclick="removeEquipe(this)">Remover</button>
                                 </div>
                             `;
-                            listaAgendamentos.appendChild(agendamentoItem);
-                        });
-                        if (hasUrgency) {
-                            urgencyNotification.style.display = 'block';
+                        } else {
+                            alert('Erro: ' + result.message);
                         }
-                    } else {
-                        listaAgendamentos.innerHTML = '<p class="loading-text">Nenhum agendamento encontrado.</p>';
-                    }
-                } catch (error) {
-                    console.error('Erro ao carregar agendamentos:', error);
-                    if (error instanceof TypeError && error.message.includes('NetworkError')) {
-                        listaAgendamentos.innerHTML = '<p class="loading-text error">Erro de conexão de rede ou problema de CORS ao carregar agendamentos. Verifique a implantação do Apps Script.</p>';
-                    } else {
-                        listaAgendamentos.innerHTML = `<p class="loading-text error">Erro ao carregar agendamentos: ${error.message}.</p>`;
-                    }
+                    })
+                    .catch(error => alert('Erro ao salvar RDO: ' + error.message));
+                });
+        }
+
+        // Salvar agendamento
+        function salvarAgendamento() {
+            const data = {
+                action: 'salvarAgendamento',
+                unidade: document.getElementById('agendamento-unidade').value,
+                dataAgendamento: document.getElementById('agendamento-data').value,
+                descricao: document.getElementById('agendamento-descricao').value,
+                status: document.getElementById('agendamento-status').value
+            };
+
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Agendamento salvo com sucesso!');
+                    document.getElementById('agendamento-unidade').value = '';
+                    document.getElementById('agendamento-data').value = '';
+                    document.getElementById('agendamento-descricao').value = '';
+                    loadAgendamentos();
+                } else {
+                    alert('Erro: ' + result.message);
                 }
-            }
+            })
+            .catch(error => alert('Erro ao salvar agendamento: ' + error.message));
+        }
 
-            async function carregarAgendamentosPendentesParaRDO() {
-                tipoRDOSelect.innerHTML = '<option value="novo">Carregando agendamentos...</option>';
-                try {
-                    const response = await fetch(GAS_WEB_APP_URL + '?action=getPendingAgendamentos');
-                    // Check if the response is ok (status 200-299)
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-                    }
-                    const agendamentosPendentes = await response.json(); 
-
-                    tipoRDOSelect.innerHTML = '<option value="novo">Criar Novo (Emergência)</option>';
-                    if (agendamentosPendentes.length > 0) {
-                        agendamentosPendentes.forEach(agendamento => {
-                            const option = document.createElement('option');
-                            option.value = agendamento.numeroRDO;
-                            option.textContent = `#${agendamento.numeroRDO} - ${agendamento.unidade} (${agendamento.dataAgendamento}) ${agendamento.status === 'Urgencia' ? '⚠️ URGÊNCIA' : ''}`;
-                            tipoRDOSelect.appendChild(option);
-                        });
-                    }
-                } catch (error) {
-                    console.error('Erro ao carregar agendamentos pendentes:', error);
-                    if (error instanceof TypeError && error.message.includes('NetworkError')) {
-                        tipoRDOSelect.innerHTML = '<option value="novo">Erro de rede/CORS ao carregar agendamentos.</option>';
-                    } else {
-                        tipoRDOSelect.innerHTML = `<option value="novo">Erro ao carregar agendamentos: ${error.message}</option>`;
-                    }
-                }
-            }
-
-            showTab('tabNovoRDO');
+        // Carregar dados ao iniciar
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRDOs();
+            loadAgendamentos();
+            loadPendingAgendamentos();
         });
     </script>
 </body>
