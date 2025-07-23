@@ -237,6 +237,7 @@
                                 Nº ${rdo.numeroRDO} - ${rdo.unidade} (${rdo.data})
                                 <a href="${rdo.pdfUrl}" target="_blank">Ver PDF</a>
                                 <button onclick="showFotos(['${rdo.fotosUrls.join("','")}'])">Ver Fotos</button>
+                                <p>Equipe: ${rdo.equipe}</p> // Exibe como JSON string
                             </div>
                         `;
                     });
@@ -260,6 +261,8 @@
                         container.innerHTML += `
                             <div>
                                 Nº ${ag.numeroRDO} - ${ag.unidade} (${ag.dataAgendamento}) - ${ag.status}
+                                <p>Criado em: ${ag.dataCriacao}</p>
+                                <p>Descrição: ${ag.descricao}</p>
                             </div>
                         `;
                     });
@@ -328,24 +331,7 @@
                     .then(result => {
                         if (result.success) {
                             alert('Laudo salvo com sucesso! PDF: ' + result.pdfUrl);
-                            document.querySelector('form').reset(); // Ajuste se necessário
-                            document.getElementById('equipe-container').innerHTML = `
-                                <div class="equipe-container">
-                                    <div class="form-group">
-                                        <label>Nome:</label>
-                                        <input type="text" class="equipe-nome">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Função / Cargo:</label>
-                                        <input type="text" class="equipe-funcao">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Qtd:</label>
-                                        <input type="number" class="equipe-qtd" min="1">
-                                    </div>
-                                    <button class="remove-btn" onclick="removeEquipe(this)">Remover</button>
-                                </div>
-                            `;
+                            location.reload(); // Recarrega para atualizar listas
                         } else {
                             alert('Erro: ' + result.message);
                         }
