@@ -598,13 +598,17 @@
                 } else {
                     try {
                         const response = await fetch(`${GAS_WEB_APP_URL}?action=getAgendamentoDetails&rdoNum=${selectedRdoNum}`);
-                        const agendamento = await response.json(); // Removido mode: 'no-cors'
+                        // Check if the response is ok (status 200-299)
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                        }
+                        const agendamento = await response.json(); 
 
                         if (agendamento && agendamento.unidade) {
                             document.getElementById('unidade').value = agendamento.unidade;
                             document.getElementById('tarefas').value = agendamento.descricao || '';
                         } else {
-                            // Usando console.error e mensagem na UI em vez de alert()
                             console.error('Agendamento não encontrado ou dados incompletos.');
                             mensagemStatus.textContent = 'Agendamento não encontrado ou dados incompletos.';
                             mensagemStatus.classList.add('error');
@@ -615,7 +619,11 @@
                         }
                     } catch (error) {
                         console.error('Erro ao buscar detalhes do agendamento:', error);
-                        mensagemStatus.textContent = 'Erro ao carregar detalhes do agendamento. Tente novamente.';
+                        if (error instanceof TypeError && error.message.includes('NetworkError')) {
+                            mensagemStatus.textContent = 'Erro de conexão de rede ou problema de CORS ao carregar agendamento. Por favor, verifique se a URL do Google Apps Script está correta e se a implantação está configurada para "Qualquer pessoa" (Anyone).';
+                        } else {
+                            mensagemStatus.textContent = `Erro ao carregar detalhes do agendamento: ${error.message}. Tente novamente.`;
+                        }
                         mensagemStatus.classList.add('error');
                         mensagemStatus.style.display = 'block';
                         laudoForm.reset();
@@ -672,10 +680,15 @@
                 try {
                     const response = await fetch(GAS_WEB_APP_URL, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }, // Removido mode: 'no-cors'
+                        headers: { 'Content-Type': 'application/json' }, 
                         body: JSON.stringify(data),
                     });
-                    const result = await response.json(); // Tenta ler a resposta JSON
+                    // Check if the response is ok (status 200-299)
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                    }
+                    const result = await response.json(); 
 
                     if (result.success) {
                         mensagemStatus.textContent = 'Laudo enviado com sucesso! O PDF foi gerado e salvo no Google Drive.';
@@ -686,14 +699,18 @@
                         previewFotosDiv.innerHTML = '';
                         document.getElementById('fiscal').value = 'Cleyton Jorge Dias';
                         await carregarAgendamentosPendentesParaRDO();
-                        await carregarRdosConcluidos(); // Recarrega a lista de RDOs
+                        await carregarRdosConcluidos(); 
                     } else {
                         mensagemStatus.textContent = `Erro ao enviar o laudo: ${result.message}`;
                         mensagemStatus.classList.add('error');
                     }
                 } catch (error) {
                     console.error('Erro ao enviar o laudo:', error);
-                    mensagemStatus.textContent = 'Erro ao enviar o laudo. Verifique o console para mais detalhes.';
+                    if (error instanceof TypeError && error.message.includes('NetworkError')) {
+                        mensagemStatus.textContent = 'Erro de conexão de rede ou problema de CORS. Por favor, verifique se a URL do Google Apps Script está correta e se a implantação está configurada para "Qualquer pessoa" (Anyone).';
+                    } else {
+                        mensagemStatus.textContent = `Erro ao enviar o laudo: ${error.message}. Verifique o console para mais detalhes.`;
+                    }
                     mensagemStatus.classList.add('error');
                 }
             });
@@ -717,10 +734,15 @@
                 try {
                     const response = await fetch(GAS_WEB_APP_URL, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }, // Removido mode: 'no-cors'
+                        headers: { 'Content-Type': 'application/json' }, 
                         body: JSON.stringify(data),
                     });
-                    const result = await response.json(); // Tenta ler a resposta JSON
+                    // Check if the response is ok (status 200-299)
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                    }
+                    const result = await response.json(); 
 
                     if (result.success) {
                         mensagemAgendamentoStatus.textContent = 'Agendamento salvo com sucesso!';
@@ -735,7 +757,11 @@
                     }
                 } catch (error) {
                     console.error('Erro ao salvar agendamento:', error);
-                    mensagemAgendamentoStatus.textContent = 'Erro ao salvar agendamento. Verifique o console para mais detalhes.';
+                    if (error instanceof TypeError && error.message.includes('NetworkError')) {
+                        mensagemAgendamentoStatus.textContent = 'Erro de conexão de rede ou problema de CORS. Por favor, verifique se a URL do Google Apps Script está correta e se a implantação está configurada para "Qualquer pessoa" (Anyone).';
+                    } else {
+                        mensagemAgendamentoStatus.textContent = `Erro ao salvar agendamento: ${error.message}. Verifique o console para mais detalhes.`;
+                    }
                     mensagemAgendamentoStatus.classList.add('error');
                 }
             });
@@ -745,7 +771,12 @@
                 listaRdos.innerHTML = '<p class="loading-text">Carregando relatórios...</p>';
                 try {
                     const response = await fetch(GAS_WEB_APP_URL + '?action=getListaRDOs');
-                    const rdos = await response.json(); // Removido mode: 'no-cors'
+                    // Check if the response is ok (status 200-299)
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                    }
+                    const rdos = await response.json(); 
                     
                     listaRdos.innerHTML = '';
                     if (rdos.length > 0) {
@@ -768,7 +799,11 @@
                     }
                 } catch (error) {
                     console.error('Erro ao carregar RDOs:', error);
-                    listaRdos.innerHTML = '<p class="loading-text error">Erro ao carregar relatórios.</p>';
+                    if (error instanceof TypeError && error.message.includes('NetworkError')) {
+                        listaRdos.innerHTML = '<p class="loading-text error">Erro de conexão de rede ou problema de CORS ao carregar relatórios. Verifique a implantação do Apps Script.</p>';
+                    } else {
+                        listaRdos.innerHTML = `<p class="loading-text error">Erro ao carregar relatórios: ${error.message}.</p>`;
+                    }
                 }
             }
 
@@ -804,7 +839,12 @@
 
                 try {
                     const response = await fetch(GAS_WEB_APP_URL + '?action=getAgendamentos');
-                    const agendamentos = await response.json(); // Removido mode: 'no-cors'
+                    // Check if the response is ok (status 200-299)
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                    }
+                    const agendamentos = await response.json(); 
 
                     listaAgendamentos.innerHTML = '';
                     if (agendamentos.length > 0) {
@@ -835,7 +875,11 @@
                     }
                 } catch (error) {
                     console.error('Erro ao carregar agendamentos:', error);
-                    listaAgendamentos.innerHTML = '<p class="loading-text error">Erro ao carregar agendamentos.</p>';
+                    if (error instanceof TypeError && error.message.includes('NetworkError')) {
+                        listaAgendamentos.innerHTML = '<p class="loading-text error">Erro de conexão de rede ou problema de CORS ao carregar agendamentos. Verifique a implantação do Apps Script.</p>';
+                    } else {
+                        listaAgendamentos.innerHTML = `<p class="loading-text error">Erro ao carregar agendamentos: ${error.message}.</p>`;
+                    }
                 }
             }
 
@@ -843,7 +887,12 @@
                 tipoRDOSelect.innerHTML = '<option value="novo">Carregando agendamentos...</option>';
                 try {
                     const response = await fetch(GAS_WEB_APP_URL + '?action=getPendingAgendamentos');
-                    const agendamentosPendentes = await response.json(); // Removido mode: 'no-cors'
+                    // Check if the response is ok (status 200-299)
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                    }
+                    const agendamentosPendentes = await response.json(); 
 
                     tipoRDOSelect.innerHTML = '<option value="novo">Criar Novo (Emergência)</option>';
                     if (agendamentosPendentes.length > 0) {
@@ -856,7 +905,11 @@
                     }
                 } catch (error) {
                     console.error('Erro ao carregar agendamentos pendentes:', error);
-                    tipoRDOSelect.innerHTML = '<option value="novo">Erro ao carregar agendamentos</option>';
+                    if (error instanceof TypeError && error.message.includes('NetworkError')) {
+                        tipoRDOSelect.innerHTML = '<option value="novo">Erro de rede/CORS ao carregar agendamentos.</option>';
+                    } else {
+                        tipoRDOSelect.innerHTML = `<option value="novo">Erro ao carregar agendamentos: ${error.message}</option>`;
+                    }
                 }
             }
 
