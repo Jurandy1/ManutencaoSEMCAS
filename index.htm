@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -85,6 +86,12 @@
             <div class="form-section p-4 border border-gray-200 rounded-md">
                 <h3 class="text-lg font-medium mb-3 text-gray-700">Dados Gerais</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group md:col-span-2">
+                        <label for="agendamento-associado" class="block text-gray-700 text-sm font-bold mb-2">Agendamento Associado (Opcional):</label>
+                        <select id="agendamento-associado" name="agendamentoAssociado" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" onchange="fillRDOFormWithAgendamento()">
+                            <option value="">-- Selecione um Agendamento --</option>
+                        </select>
+                    </div>
                     <div class="form-group">
                         <label for="unidade" class="block text-gray-700 text-sm font-bold mb-2">Unidade:</label>
                         <input type="text" id="unidade" name="unidade" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
@@ -231,6 +238,13 @@
                 <div class="form-section p-4 border border-gray-200 rounded-md">
                     <h3 class="text-lg font-medium mb-3 text-gray-700">Dados Gerais</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-group md:col-span-2">
+                            <label for="edit-agendamento-associado" class="block text-gray-700 text-sm font-bold mb-2">Agendamento Associado (Opcional):</label>
+                            <select id="edit-agendamento-associado" name="agendamentoAssociado" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                <option value="">-- Nenhum Agendamento Associado --</option>
+                                <!-- Opções serão carregadas dinamicamente -->
+                            </select>
+                        </div>
                         <div class="form-group">
                             <label for="edit-unidade" class="block text-gray-700 text-sm font-bold mb-2">Unidade:</label>
                             <input type="text" id="edit-unidade" name="unidade" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
@@ -293,6 +307,7 @@
 
         // Variável para armazenar o estado das fotos durante a edição
         let currentEditPhotos = []; // Armazena URLs das fotos existentes para edição
+        let availableAgendamentos = []; // Armazena a lista de agendamentos disponíveis
 
         // --- Funções de UI e Utilidade ---
 
@@ -355,7 +370,7 @@
         }
 
         // Função para abrir o modal de edição de RDO
-        function openEditRDOModal(rdoData) {
+        async function openEditRDOModal(rdoData) {
             const modal = document.getElementById('editRDOModal');
             document.getElementById('edit-rdo-number').innerText = rdoData.numeroRDO;
             document.getElementById('edit-numeroRDO').value = rdoData.numeroRDO;
@@ -364,6 +379,10 @@
             document.getElementById('edit-fiscal').value = rdoData.fiscal;
             document.getElementById('edit-tarefasRealizadas').value = rdoData.tarefasRealizadas;
             document.getElementById('edit-ocorrencias').value = rdoData.ocorrencias;
+
+            // Preencher seletor de agendamento associado
+            await loadAgendamentosForEditRDOForm(rdoData.numeroAgendamentoAssociado);
+
 
             // Preencher equipe
             const equipeContainer = document.getElementById('edit-equipe-container');
@@ -566,6 +585,8 @@
             } else if (tabName === 'agendamentos') {
                 loadAgendamentos();
                 loadPendingAgendamentos();
+            } else if (tabName === 'novoRDO') {
+                loadAgendamentosForRDOForm(); // Carrega agendamentos para o seletor
             }
         }
 
@@ -616,7 +637,8 @@
                 equipe: JSON.stringify(equipe), // Armazena como string JSON
                 tarefasRealizadas: formData.get('tarefasRealizadas'),
                 ocorrencias: formData.get('ocorrencias'),
-                fotos: processedPhotos // Envia as fotos Base64 otimizadas
+                fotos: processedPhotos, // Envia as fotos Base64 otimizadas
+                numeroAgendamentoAssociado: formData.get('agendamentoAssociado') // Novo campo
             };
 
             try {
@@ -705,7 +727,8 @@
                 equipe: JSON.stringify(equipe),
                 tarefasRealizadas: formData.get('tarefasRealizadas'),
                 ocorrencias: formData.get('ocorrencias'),
-                fotos: allPhotosToSend // Envia todas as fotos (existentes e novas)
+                fotos: allPhotosToSend, // Envia todas as fotos (existentes e novas)
+                numeroAgendamentoAssociado: formData.get('agendamentoAssociado') // Novo campo
             };
 
             try {
@@ -816,6 +839,7 @@
                     <p class="text-gray-700 mb-1"><strong>Unidade:</strong> ${rdo.unidade}</p>
                     <p class="text-gray-700 mb-1"><strong>Data:</strong> ${rdo.data}</p>
                     <p class="text-gray-700 mb-1"><strong>Fiscal:</strong> ${rdo.fiscal}</p>
+                    ${rdo.numeroAgendamentoAssociado ? `<p class="text-gray-700 mb-1"><strong>Agendamento:</strong> ${rdo.numeroAgendamentoAssociado}</p>` : ''}
                     <p class="text-gray-700 mb-1"><strong>Equipe:</strong></p>
                     <ul class="list-disc list-inside text-gray-600 mb-2">
                         ${equipeHtml}
@@ -951,6 +975,91 @@
             } catch (error) {
                 console.error('Erro ao verificar agendamentos pendentes:', error);
                 // Não mostra modal para este erro, apenas no console
+            }
+        }
+
+        // Nova função: Carregar agendamentos para o seletor na aba "Novo RDO"
+        async function loadAgendamentosForRDOForm() {
+            const selectElement = document.getElementById('agendamento-associado');
+            selectElement.innerHTML = '<option value="">-- Selecione um Agendamento --</option>'; // Limpa e adiciona opção padrão
+            console.log('Fetching agendamentos from:', `${WEB_APP_URL}?action=getAgendamentosForRDOForm`); // Log the URL
+            try {
+                const response = await fetch(`${WEB_APP_URL}?action=getAgendamentosForRDOForm`);
+                if (!response.ok) { // Check if response is OK (status 200-299)
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const result = await response.json();
+                console.log('Agendamentos fetched:', result); // Log the result
+                if (result.success && result.data.length > 0) {
+                    availableAgendamentos = result.data; // Armazena os agendamentos disponíveis
+                    result.data.forEach(agendamento => {
+                        const option = document.createElement('option');
+                        option.value = agendamento.numero;
+                        option.innerText = `Agendamento #${agendamento.numero} - ${agendamento.unidade} (${agendamento.dataAgendamento})`;
+                        selectElement.appendChild(option);
+                    });
+                } else {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.innerText = 'Nenhum agendamento disponível.';
+                    selectElement.appendChild(option);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar agendamentos para o formulário RDO:', error);
+                const option = document.createElement('option');
+                option.value = '';
+                option.innerText = 'Erro ao carregar agendamentos.';
+                selectElement.appendChild(option);
+            }
+        }
+
+        // Nova função: Carregar agendamentos para o seletor na aba "Editar RDO"
+        async function loadAgendamentosForEditRDOForm(selectedAgendamentoNum) {
+            const selectElement = document.getElementById('edit-agendamento-associado');
+            selectElement.innerHTML = '<option value="">-- Nenhum Agendamento Associado --</option>'; // Limpa e adiciona opção padrão
+            try {
+                const response = await fetch(`${WEB_APP_URL}?action=getAgendamentosForRDOForm`);
+                const result = await response.json();
+                if (result.success && result.data.length > 0) {
+                    result.data.forEach(agendamento => {
+                        const option = document.createElement('option');
+                        option.value = agendamento.numero;
+                        option.innerText = `Agendamento #${agendamento.numero} - ${agendamento.unidade} (${agendamento.dataAgendamento})`;
+                        if (agendamento.numero == selectedAgendamentoNum) {
+                            option.selected = true;
+                        }
+                        selectElement.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao carregar agendamentos para o formulário de edição RDO:', error);
+            }
+        }
+
+
+        // Nova função: Preencher campos do formulário RDO com base no agendamento selecionado
+        function fillRDOFormWithAgendamento() {
+            const selectElement = document.getElementById('agendamento-associado');
+            const selectedAgendamentoNum = selectElement.value;
+            const unidadeInput = document.getElementById('unidade');
+            const dataInput = document.getElementById('data');
+
+            if (selectedAgendamentoNum) {
+                const selectedAgendamento = availableAgendamentos.find(ag => ag.numero == selectedAgendamentoNum);
+                if (selectedAgendamento) {
+                    unidadeInput.value = selectedAgendamento.unidade;
+                    // Formata a data para o formato 'YYYY-MM-DD' esperado pelo input type="date"
+                    const parts = selectedAgendamento.dataAgendamento.split('/');
+                    if (parts.length === 3) {
+                        dataInput.value = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                    } else {
+                        dataInput.value = selectedAgendamento.dataAgendamento; // Tenta usar a data como está
+                    }
+                }
+            } else {
+                // Limpa os campos se nenhum agendamento for selecionado
+                unidadeInput.value = '';
+                dataInput.value = '';
             }
         }
 
