@@ -1,19 +1,27 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Manutenção CSL - SEMCAS</title>
-    <!-- Tailwind CSS CDN -->
+    <!-- Tailwind CSS CDN - Nota: O uso de CDN em produção não é recomendado para otimização.
+         Considere instalar o Tailwind CSS como um plugin PostCSS ou usar o Tailwind CLI para builds de produção.
+         Mais informações: https://tailwindcss.com/docs/installation -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        /* Estilo para lidar com o aviso '-webkit-text-size-adjust':
+           Esta propriedade é não-padrão e pode ser descartada por alguns navegadores.
+           É um aviso e geralmente não afeta a funcionalidade. */
+        body {
+            -webkit-text-size-adjust: 100%; /* Mantido para compatibilidade, mas pode gerar avisos */
+        }
+
         /* Estilos personalizados para o loader */
         .loader {
             border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
+            border-top: 44px solid #3498db;
             border-radius: 50%;
             width: 24px;
             height: 24px;
@@ -345,10 +353,18 @@
         }
 
         // Função para abrir o modal de fotos
-        function showPhotosModal(photos) {
+        function showPhotosModal(photosJsonString) {
             const modal = document.getElementById('photosModal');
             const gallery = document.getElementById('photosGallery');
             gallery.innerHTML = ''; // Limpa fotos anteriores
+
+            let photos = [];
+            try {
+                photos = JSON.parse(photosJsonString); // Parse the string back to an array
+            } catch (e) {
+                console.error('Erro ao parsear JSON de fotos:', e, photosJsonString);
+                photos = [];
+            }
 
             if (photos && photos.length > 0) {
                 photos.forEach(photoUrl => {
@@ -493,8 +509,9 @@
             // Atualiza a exibição das fotos no modal de edição
             const currentPhotosContainer = document.getElementById('edit-current-photos');
             currentPhotosContainer.innerHTML = '';
+            // Corrigido: Iterar sobre `currentEditPhotos` para renderizar, não `currentPhotosContainer`
             if (currentEditPhotos.length > 0) {
-                currentPhotosContainer.forEach((photoUrl, idx) => {
+                currentEditPhotos.forEach((photoUrl, idx) => {
                     const photoDiv = document.createElement('div');
                     photoDiv.className = 'relative group';
                     photoDiv.innerHTML = `
@@ -735,7 +752,7 @@
                 const response = await fetch(WEB_APP_URL, {
                     method: 'POST',
                     body: JSON.stringify(data),
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                    headers: { 'Content-Type': 'text/plain;charset=utf-m8' }
                 });
                 const result = await response.json();
 
@@ -793,12 +810,18 @@
 
         // --- Funções de Carregamento e Renderização de Dados ---
 
+        // Função para escapar aspas simples para inserção em atributos HTML
+        function escapeHtmlSingleQuotes(str) {
+            return (str || '').toString().replace(/'/g, "\\'");
+        }
+
         // Carregar RDOs Concluídos
         async function loadRDOs() {
             showLoader('rdos-loader');
             try {
                 const response = await fetch(`${WEB_APP_URL}?action=getListaRDOs`);
                 const result = await response.json();
+                console.log('Dados de RDOs recebidos:', result); // Log para depuração
                 if (result.success) {
                     renderRDOs(result.data);
                 } else {
@@ -806,6 +829,7 @@
                     document.getElementById('rdos-list').innerHTML = `<p class="text-gray-600 col-span-full">${result.message}</p>`;
                 }
             } catch (error) {
+                console.error('Erro ao conectar ou processar RDOs:', error); // Log de erro mais detalhado
                 showMessageModal('Erro', 'Erro ao conectar com o servidor para carregar RDOs: ' + error.message);
                 document.getElementById('rdos-list').innerHTML = `<p class="text-gray-600 col-span-full">Erro ao carregar RDOs. Tente novamente mais tarde.</p>`;
             } finally {
@@ -826,11 +850,25 @@
             rdos.forEach(rdo => {
                 let equipeHtml = '';
                 try {
-                    const equipe = JSON.parse(rdo.equipe);
+                    // Verifica se rdo.equipe é uma string antes de tentar o JSON.parse
+                    const equipe = typeof rdo.equipe === 'string' ? JSON.parse(rdo.equipe) : rdo.equipe;
                     equipeHtml = equipe.map(m => `<li>${m.nome} (${m.funcao})</li>`).join('');
                 } catch (e) {
                     equipeHtml = `<li>Erro ao carregar equipe: ${rdo.equipe}</li>`;
+                    console.error('Erro ao parsear equipe para RDO:', rdo.numeroRDO, e);
                 }
+                
+                // Log para inspecionar os URLs antes de usar
+                console.log(`RDO #${rdo.numeroRDO} - pdfUrl: ${rdo.pdfUrl}, fotosUrls:`, rdo.fotosUrls);
+
+                // Escapar URLs e números de RDO para uso seguro em atributos onclick
+                const escapedPdfUrl = escapeHtmlSingleQuotes(rdo.pdfUrl);
+                const escapedNumeroRDO = escapeHtmlSingleQuotes(String(rdo.numeroRDO)); // Garante que é string
+
+                // Escapar a string JSON das fotos para uso seguro em atributos onclick
+                const fotosUrlsJsonString = JSON.stringify(rdo.fotosUrls || []);
+                const escapedFotosUrlsJson = escapeHtmlSingleQuotes(fotosUrlsJsonString);
+
 
                 const card = document.createElement('div');
                 card.className = 'bg-white p-4 rounded-lg shadow-md border border-gray-200';
@@ -847,16 +885,16 @@
                     <p class="text-gray-700 mb-1"><strong>Tarefas:</strong> ${rdo.tarefasRealizadas}</p>
                     <p class="text-gray-700 mb-4"><strong>Ocorrências:</strong> ${rdo.ocorrencias}</p>
                     <div class="flex flex-wrap gap-2">
-                        <button onclick="window.open('${rdo.pdfUrl}', '_blank')" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center">
+                        <button onclick="window.open('${escapedPdfUrl}', '_blank')" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center">
                             <i class="fas fa-file-pdf mr-2"></i> Ver PDF
                         </button>
-                        <button onclick="showPhotosModal(${JSON.stringify(rdo.fotosUrls)})" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center">
+                        <button onclick="showPhotosModal('${escapedFotosUrlsJson}')" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center">
                             <i class="fas fa-image mr-2"></i> Ver Fotos
                         </button>
-                        <button onclick="editRDO('${rdo.numeroRDO}')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center">
+                        <button onclick="editRDO('${escapedNumeroRDO}')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center">
                             <i class="fas fa-edit mr-2"></i> Editar
                         </button>
-                        <button onclick="confirmDeleteRDO('${rdo.numeroRDO}')" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center">
+                        <button onclick="confirmDeleteRDO('${escapedNumeroRDO}')" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg text-sm flex items-center">
                             <i class="fas fa-trash-alt mr-2"></i> Excluir
                         </button>
                     </div>
@@ -885,7 +923,7 @@
 
         // Função para confirmar exclusão de RDO
         function confirmDeleteRDO(numeroRDO) {
-            showMessageModal('Confirmar Exclusão', `Tem certeza que deseja excluir o RDO #${numeroRDO}? Esta ação não pode ser desfeita após 10 minutos da criação.`, [
+            showMessageModal('Confirmar Exclusão', `Tem certeza que deseja excluir o RDO #${numeroRDO}? Esta ação não pode ser desfeita.`, [ // Mensagem ajustada
                 { text: 'Cancelar', onClick: closeMessageModal },
                 { text: 'Excluir', onClick: () => deleteRDO(numeroRDO) }
             ]);
@@ -982,14 +1020,14 @@
         async function loadAgendamentosForRDOForm() {
             const selectElement = document.getElementById('agendamento-associado');
             selectElement.innerHTML = '<option value="">-- Selecione um Agendamento --</option>'; // Limpa e adiciona opção padrão
-            console.log('Fetching agendamentos from:', `${WEB_APP_URL}?action=getAgendamentosForRDOForm`); // Log the URL
+            console.log('Fetching agendamentos for RDO form from:', `${WEB_APP_URL}?action=getAgendamentosForRDOForm`); // Log the URL
             try {
                 const response = await fetch(`${WEB_APP_URL}?action=getAgendamentosForRDOForm`);
                 if (!response.ok) { // Check if response is OK (status 200-299)
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const result = await response.json();
-                console.log('Agendamentos fetched:', result); // Log the result
+                console.log('Agendamentos for RDO form fetched:', result); // Log the result
                 if (result.success && result.data.length > 0) {
                     availableAgendamentos = result.data; // Armazena os agendamentos disponíveis
                     result.data.forEach(agendamento => {
@@ -1017,9 +1055,14 @@
         async function loadAgendamentosForEditRDOForm(selectedAgendamentoNum) {
             const selectElement = document.getElementById('edit-agendamento-associado');
             selectElement.innerHTML = '<option value="">-- Nenhum Agendamento Associado --</option>'; // Limpa e adiciona opção padrão
+            console.log('Fetching agendamentos for Edit RDO form from:', `${WEB_APP_URL}?action=getAgendamentosForRDOForm`); // Log the URL
             try {
                 const response = await fetch(`${WEB_APP_URL}?action=getAgendamentosForRDOForm`);
+                if (!response.ok) { // Check if response is OK (status 200-299)
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const result = await response.json();
+                console.log('Agendamentos for Edit RDO form fetched:', result); // Log the result
                 if (result.success && result.data.length > 0) {
                     result.data.forEach(agendamento => {
                         const option = document.createElement('option');
