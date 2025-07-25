@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Patrimonial - SEMCAS</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loader">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Carregando dados...</p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-chart-line"></i>
+                    <h1>Dashboard Patrimonial</h1>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-outline" onclick="exportDashboard()">
+                        <i class="fas fa-download"></i>
+                        Exportar
+                    </button>
+                    <button class="btn btn-primary" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i>
+                        Atualizar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard -->
+    <main class="main">
+        <div class="container">
+            <!-- Global Filters -->
+            <section class="filters-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-filter"></i> Filtros Globais</h2>
+                        <button class="btn btn-sm btn-outline" onclick="clearAllFilters()">
+                            <i class="fas fa-times"></i>
+                            Limpar Filtros
+                        </button>
+                    </div>
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label for="tipoUnidade">Tipo de Unidade</label>
+                            <select id="tipoUnidade" onchange="updateFilters()">
+                                <option value="">Todos</option>
+                                <option value="CONSELHO">CONSELHO</option>
+                                <option value="CRAS">CRAS</option>
+                                <option value="CREAS">CREAS</option>
+                                <option value="UNIDADE EXTERNA">UNIDADE EXTERNA</option>
+                                <option value="CENTRO POP">CENTRO POP</option>
+                                <option value="ABRIGO">ABRIGO</option>
+                                <option value="SEDE">SEDE</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="unidade">Unidade</label>
+                            <select id="unidade" onchange="updateFilters()">
+                                <option value="">Selecione uma Unidade...</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="estado">Estado</label>
+                            <select id="estado" onchange="updateFilters()">
+                                <option value="">Todos</option>
+                                <option value="BOM">BOM</option>
+                                <option value="REGULAR">REGULAR</option>
+                                <option value="RUIM">RUIM</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="origem">Origem</label>
+                            <select id="origem" onchange="updateFilters()">
+                                <option value="">Todas</option>
+                                <option value="DOAÇÃO">Apenas Doações</option>
+                                <option value="PROPRIO">Apenas Próprios</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Metrics Cards -->
+            <section class="metrics-section">
+                <div class="metrics-grid">
+                    <div class="metric-card primary">
+                        <div class="metric-icon">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3>Total de Itens</h3>
+                            <span class="metric-value" id="totalItens">-</span>
+                            <span class="metric-change" id="totalItensChange">-</span>
+                        </div>
+                    </div>
+                    <div class="metric-card success">
+                        <div class="metric-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3>Estado Bom</h3>
+                            <span class="metric-value" id="itensBom">-</span>
+                            <span class="metric-percentage" id="itensBomPerc">-</span>
+                        </div>
+                    </div>
+                    <div class="metric-card warning">
+                        <div class="metric-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3>Estado Regular</h3>
+                            <span class="metric-value" id="itensRegular">-</span>
+                            <span class="metric-percentage" id="itensRegularPerc">-</span>
+                        </div>
+                    </div>
+                    <div class="metric-card danger">
+                        <div class="metric-icon">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3>Estado Ruim</h3>
+                            <span class="metric-value" id="itensRuim">-</span>
+                            <span class="metric-percentage" id="itensRuimPerc">-</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dashboard Tabs -->
+            <section class="tabs-section">
+                <div class="tabs">
+                    <button class="tab-button active" onclick="showTab('patrimonio')">
+                        <i class="fas fa-chart-bar"></i>
+                        Patrimônio Detalhado
+                    </button>
+                    <button class="tab-button" onclick="showTab('estoque')">
+                        <i class="fas fa-warehouse"></i>
+                        Estoque
+                    </button>
+                    <button class="tab-button" onclick="showTab('necessidades')">
+                        <i class="fas fa-clipboard-list"></i>
+                        Análise de Necessidades
+                    </button>
+                </div>
+
+                <!-- Patrimônio Tab -->
+                <div id="patrimonio-tab" class="tab-content active">
+                    <div class="tab-grid">
+                        <div class="card chart-card">
+                            <div class="card-header">
+                                <h3>Distribuição por Estado</h3>
+                                <button class="btn btn-sm btn-outline" onclick="exportChart('estadoChart')">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="estadoChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="card chart-card">
+                            <div class="card-header">
+                                <h3>Itens por Unidade</h3>
+                                <button class="btn btn-sm btn-outline" onclick="exportChart('unidadeChart')">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="unidadeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Inventário Completo</h3>
+                            <div class="header-actions">
+                                <div class="search-box">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="searchInventario" placeholder="Buscar item..." oninput="searchInventario(this.value)">
+                                </div>
+                                <button class="btn btn-primary" onclick="exportInventario()">
+                                    <i class="fas fa-file-pdf"></i>
+                                    Exportar PDF
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table id="inventarioTable">
+                                <thead>
+                                    <tr>
+                                        <th>Descrição</th>
+                                        <th>Unidade</th>
+                                        <th>Estado</th>
+                                        <th>Origem</th>
+                                        <th>Categoria</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventarioTableBody">
+                                    <!-- Dados serão inseridos aqui -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pagination">
+                            <button class="btn btn-sm" onclick="previousPage()" id="prevPageBtn">
+                                <i class="fas fa-chevron-left"></i>
+                                Anterior
+                            </button>
+                            <span class="page-info" id="pageInfo">Página 1 de 1</span>
+                            <button class="btn btn-sm" onclick="nextPage()" id="nextPageBtn">
+                                Próxima
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estoque Tab -->
+                <div id="estoque-tab" class="tab-content">
+                    <div class="tab-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Filtros de Estoque</h3>
+                            </div>
+                            <div class="filters-grid">
+                                <div class="filter-group">
+                                    <label for="categoriaEstoque">Categoria</label>
+                                    <select id="categoriaEstoque" onchange="updateEstoque()">
+                                        <option value="">Todas</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="unidadeEstoque">Unidade</label>
+                                    <select id="unidadeEstoque" onchange="updateEstoque()">
+                                        <option value="">Todas</option>
+                                    </select>
+                                </div>
+                                <div class="search-box">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="searchEstoque" placeholder="Buscar no estoque..." oninput="searchEstoque(this.value)">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card chart-card">
+                            <div class="card-header">
+                                <h3>Top 10 Itens em Estoque</h3>
+                                <button class="btn btn-sm btn-outline" onclick="exportChart('estoqueChart')">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="estoqueChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Necessidades Tab -->
+                <div id="necessidades-tab" class="tab-content">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Análise de Necessidades Essenciais</h3>
+                            <p class="card-subtitle">Ferramenta para identificar a falta de itens essenciais (climatização e bebedouros) nas unidades.</p>
+                        </div>
+                        <div class="filters-grid">
+                            <div class="filter-group">
+                                <label for="necessidadeTipo">Filtrar por Necessidade</label>
+                                <select id="necessidadeTipo" onchange="updateNecessidades()">
+                                    <option value="">Todas as Necessidades</option>
+                                    <option value="bebedouro">Falta de Bebedouro</option>
+                                    <option value="climatizacao">Falta de Climatização</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="unidadeNecessidade">Selecionar Unidade</label>
+                                <select id="unidadeNecessidade" onchange="updateNecessidades()">
+                                    <option value="">Todas as Unidades</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" onclick="gerarRelatorioPDF()">
+                                <i class="fas fa-file-pdf"></i>
+                                Gerar Relatório PDF
+                            </button>
+                        </div>
+                        <div class="necessidades-grid" id="necessidadesGrid">
+                            <!-- Conteúdo será inserido aqui -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
