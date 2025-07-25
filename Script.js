@@ -1,6 +1,6 @@
 // Configurações e Variáveis Globais
 const CONFIG = {
-    SCRIPT_URL: 'SEU_SCRIPT_URL_AQUI', // Substitua pela URL do seu Google Apps Script
+    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbypxSVE9syiII4H4DumAfxWEgFm1AE7qLpuQgqHTNLMi4B7I8dWF0Het7V2Cd4_aL58Mg/exec', // Substitua pela URL do seu Google Apps Script
     ITEMS_PER_PAGE: 50,
     CACHE_DURATION: 300000, // 5 minutos em ms
     DEBOUNCE_DELAY: 300
